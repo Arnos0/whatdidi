@@ -1,0 +1,20 @@
+
+> whatdidishop@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.25
+  - Local:        http://localhost:3001
+
+ ✓ Starting...
+ ✓ Ready in 1892ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1676ms (503 modules)
+ GET / 200 in 1905ms
+ ✓ Compiled in 233ms (255 modules)
+ GET / 200 in 149ms
+ GET / 200 in 65ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 579ms (492 modules)
+ GET /sign-in 404 in 99ms
+ GET / 200 in 65ms
