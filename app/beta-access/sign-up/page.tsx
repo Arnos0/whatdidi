@@ -13,7 +13,7 @@ export default function BetaSignUpPage() {
               Beta Access
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Create your beta account</h1>
-            <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program</p>
+            <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program v2</p>
           </div>
           <SignUp 
             path="/beta-access/sign-up"
