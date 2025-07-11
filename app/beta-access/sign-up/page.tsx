@@ -14,24 +14,27 @@ export default function BetaSignUpPage() {
         <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program</p>
       </div>
       
-      {/* Temporary test instead of <SignUp /> */}
+      {/* Test: Try rendering SignUp component with explicit props */}
       <div className="bg-white p-8 rounded-lg shadow-lg border max-w-md w-full">
-        <h2 className="text-xl font-semibold mb-4 text-center">🧪 TEST MODE</h2>
-        <p className="text-gray-600 mb-4">
-          If you see this message, the page is working but the SignUp component is not rendering.
-        </p>
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-blue-800">
-            <strong>Expected:</strong> Clerk SignUp component with email/OAuth options
-          </p>
-          <p className="text-sm text-blue-800 mt-2">
-            <strong>Actual:</strong> This test message instead
-          </p>
+        <h2 className="text-xl font-semibold mb-4 text-center">🧪 SignUp Component Test</h2>
+        <p className="text-gray-600 mb-4">Testing SignUp component rendering:</p>
+        
+        <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
+          <p className="text-sm text-gray-600 mb-2">SignUp component should appear below:</p>
+          <SignUp 
+            appearance={{
+              elements: {
+                rootBox: "w-full",
+                card: "w-full"
+              }
+            }}
+          />
         </div>
+        
+        <p className="text-xs text-gray-500 mt-4">
+          If you see sign-up form above, the component is working. If not, there&apos;s a configuration issue.
+        </p>
       </div>
-      
-      {/* Uncomment this when test is confirmed */}
-      {/* <SignUp /> */}
     </div>
   )
 }
