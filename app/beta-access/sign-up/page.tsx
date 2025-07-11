@@ -1,4 +1,4 @@
-import { SignUp } from '@clerk/nextjs'
+import { SignUp, SignIn } from '@clerk/nextjs'
 
 export default function BetaSignUpPage() {
   return (
@@ -14,8 +14,27 @@ export default function BetaSignUpPage() {
         <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program</p>
       </div>
       
-      {/* Use exact same structure as working SignIn page */}
-      <SignUp />
+      {/* Side-by-side comparison test */}
+      <div className="flex flex-col lg:flex-row gap-8 w-full max-w-4xl">
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold mb-4 text-center">SignIn Component (Working)</h2>
+          <div className="border-2 border-green-300 p-4 rounded-lg">
+            <SignIn />
+          </div>
+        </div>
+        
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold mb-4 text-center">SignUp Component (Not Working)</h2>
+          <div className="border-2 border-red-300 p-4 rounded-lg">
+            <SignUp />
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-8 text-center text-sm text-gray-600">
+        <p>This test shows both components side-by-side using identical code.</p>
+        <p>If SignIn shows but SignUp doesn&apos;t, the issue is in Clerk configuration.</p>
+      </div>
     </div>
   )
 }
