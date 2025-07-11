@@ -14,27 +14,8 @@ export default function BetaSignUpPage() {
         <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program</p>
       </div>
       
-      {/* Test: Try rendering SignUp component with explicit props */}
-      <div className="bg-white p-8 rounded-lg shadow-lg border max-w-md w-full">
-        <h2 className="text-xl font-semibold mb-4 text-center">🧪 SignUp Component Test</h2>
-        <p className="text-gray-600 mb-4">Testing SignUp component rendering:</p>
-        
-        <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">SignUp component should appear below:</p>
-          <SignUp 
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                card: "w-full"
-              }
-            }}
-          />
-        </div>
-        
-        <p className="text-xs text-gray-500 mt-4">
-          If you see sign-up form above, the component is working. If not, there&apos;s a configuration issue.
-        </p>
-      </div>
+      {/* Use exact same structure as working SignIn page */}
+      <SignUp />
     </div>
   )
 }
