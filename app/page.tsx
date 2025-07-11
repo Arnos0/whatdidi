@@ -15,7 +15,7 @@ export default function Home() {
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-600">
                 WhatDidiShop automatically tracks all your online purchases and deliveries in one place. 
-                Connect your email, and we'll do the rest.
+                Connect your email, and we&apos;ll do the rest.
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <a
