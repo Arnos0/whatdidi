@@ -13,7 +13,25 @@ export default function BetaSignUpPage() {
         <h1 className="text-2xl font-bold text-gray-900">Create your beta account</h1>
         <p className="text-gray-600 mt-2">Welcome to the WhatDidiShop beta program</p>
       </div>
-      <SignUp />
+      
+      {/* Temporary test instead of <SignUp /> */}
+      <div className="bg-white p-8 rounded-lg shadow-lg border max-w-md w-full">
+        <h2 className="text-xl font-semibold mb-4 text-center">🧪 TEST MODE</h2>
+        <p className="text-gray-600 mb-4">
+          If you see this message, the page is working but the SignUp component is not rendering.
+        </p>
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Expected:</strong> Clerk SignUp component with email/OAuth options
+          </p>
+          <p className="text-sm text-blue-800 mt-2">
+            <strong>Actual:</strong> This test message instead
+          </p>
+        </div>
+      </div>
+      
+      {/* Uncomment this when test is confirmed */}
+      {/* <SignUp /> */}
     </div>
   )
 }
