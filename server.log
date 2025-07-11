@@ -2,19 +2,28 @@
 > whatdidishop@0.1.0 dev
 > next dev
 
- ⚠ Port 3000 is in use, trying 3001 instead.
   ▲ Next.js 14.2.25
-  - Local:        http://localhost:3001
+  - Local:        http://localhost:3000
+  - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 1892ms
+ ✓ Ready in 1290ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 984ms (293 modules)
  ○ Compiling / ...
- ✓ Compiled / in 1676ms (503 modules)
- GET / 200 in 1905ms
- ✓ Compiled in 233ms (255 modules)
- GET / 200 in 149ms
- GET / 200 in 65ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 579ms (492 modules)
- GET /sign-in 404 in 99ms
- GET / 200 in 65ms
+ ✓ Compiled / in 3s (843 modules)
+ GET / 200 in 3213ms
+ ✓ Compiled in 296ms (351 modules)
+INFO: Clerk: The request to /dashboard is being redirected because there is no signed-in user, and the path is not included in `ignoredRoutes` or `publicRoutes`. To prevent this behavior, choose one of:
+
+1. To make the route accessible to both signed in and signed out users, add "/dashboard" to the `publicRoutes` array passed to authMiddleware
+2. To prevent Clerk authentication from running at all, add "/dashboard" to the `ignoredRoutes` array passed to authMiddleware
+3. Pass a custom `afterAuth` to authMiddleware, and replace Clerk's default behavior of redirecting unless a route is included in publicRoutes
+
+For additional information about middleware, please visit https://clerk.com/docs/nextjs/middleware
+(This log only appears in development mode, or if `debug: true` is passed to authMiddleware)
+ ✓ Compiled /sign-in in 298ms (827 modules)
+ GET /sign-in 200 in 404ms
+ ✓ Compiled /sign-up in 143ms (829 modules)
+ GET /sign-up 200 in 179ms
+[?25h
