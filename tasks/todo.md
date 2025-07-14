@@ -180,6 +180,18 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - [ ] Configure monitoring
 - [ ] Launch MVP
 
+### Future Improvements (Low Priority)
+
+#### Custom Verification Pages
+- [ ] **FUTURE:** Replace Clerk Account Portal with custom verification pages
+- [ ] **FUTURE:** Create proper /sign-up/verify route with full parameter handling
+- [ ] **FUTURE:** Create /sign-in/verify route for password reset verification
+- [ ] **FUTURE:** Implement custom email verification flow on app domain
+- [ ] **FUTURE:** Add branded verification pages matching app design
+- [ ] **FUTURE:** Handle all verification edge cases and error states
+
+*Note: Currently using Clerk Account Portal for verification (working solution). Custom verification pages would provide more control and branding but require complex implementation.*
+
 ## Current Status
 **Phase**: 6 - Dashboard Layout ✅ COMPLETED  
 **Progress**: 
