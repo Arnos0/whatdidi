@@ -7,6 +7,8 @@ export default function SignUpVerifyPage() {
         <SignUp 
           path="/sign-up/verify"
           routing="path"
+          signInUrl="/sign-in"
+          redirectUrl="/dashboard"
           appearance={{
             elements: {
               rootBox: "mx-auto",
