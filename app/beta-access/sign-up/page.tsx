@@ -19,7 +19,6 @@ export default function BetaSignUpPage() {
         path="/beta-access/sign-up"
         routing="path"
         signInUrl="/sign-in"
-        afterSignUpUrl="/dashboard"
       />
     </AuthCard>
   )
