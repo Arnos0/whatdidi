@@ -208,15 +208,43 @@ whatdidishop/
 
 ### How to Run Locally
 ```bash
-# Start development server
-npm run dev
+# RECOMMENDED: Use helper scripts (avoids 2-minute timeout issues)
+./start-dev.sh  # Starts server in background on port 3002
+./stop-dev.sh   # Stops the server cleanly
+
+# View server logs
+tail -f /tmp/nextjs.log
+
+# Manual start (may timeout after 2 minutes)
+PORT=3002 npm run dev
+
+# If localhost doesn't work, try binding to all interfaces
+HOST=0.0.0.0 PORT=3002 npm run dev
+
+# Production build and serve (sometimes more reliable)
+npm run build
+PORT=3002 npm start
 
 # Run with debug logging
-DEBUG=* npm run dev
-
-# Run with specific port
-PORT=3001 npm run dev
+DEBUG=* PORT=3002 npm run dev
 ```
+
+### Troubleshooting Network Issues
+If you can't access the server at localhost:3002:
+1. Check if you're in a Docker/container environment
+2. Try accessing via the container's IP instead of localhost
+3. Ensure firewall allows connections on port 3002
+4. Try production build: `npm run build && PORT=3002 npm start`
+
+### Server Timeout Issues
+**IMPORTANT**: The development server may timeout after 2 minutes when run through Claude Code. 
+
+**Solution**: Use the helper scripts:
+- `./start-dev.sh` - Starts server in background (no timeout)
+- `./stop-dev.sh` - Stops server cleanly
+- `tail -f /tmp/nextjs.log` - Monitor server logs
+
+These scripts run the server in the background without timeout issues.
 
 ### How to Test Email Parsing
 1. Use the test email parser at `/dashboard/test-parser`
