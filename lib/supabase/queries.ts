@@ -1,4 +1,4 @@
-import { supabase, createServerClient } from './client'
+import { supabase } from './client'
 import type { 
   User, 
   UserInsert, 
@@ -10,18 +10,8 @@ import type {
   OrderItemInsert
 } from './types'
 
-// User queries
+// User queries (client-safe, uses RLS)
 export const userQueries = {
-  async findByClerkId(clerkId: string): Promise<User | null> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('clerk_id', clerkId)
-      .single()
-    
-    if (error) return null
-    return data
-  },
 
   async create(user: UserInsert): Promise<User | null> {
     const { data, error } = await supabase
@@ -47,7 +37,7 @@ export const userQueries = {
   }
 }
 
-// Order queries
+// Order queries (client-safe, uses RLS)
 export const orderQueries = {
   async getByUserId(userId: string, options?: {
     status?: string
@@ -77,6 +67,7 @@ export const orderQueries = {
     if (error) throw error
     return data || []
   },
+
 
   async getById(orderId: string): Promise<Order | null> {
     const { data, error } = await supabase
@@ -144,7 +135,7 @@ export const orderQueries = {
   }
 }
 
-// Order item queries
+// Order item queries (client-safe, uses RLS)
 export const orderItemQueries = {
   async create(item: OrderItemInsert): Promise<OrderItem | null> {
     const { data, error } = await supabase
@@ -187,36 +178,3 @@ export const orderItemQueries = {
   }
 }
 
-// Server-side queries (using service role key)
-export const serverQueries = {
-  async syncUserFromClerk(clerkUser: {
-    id: string
-    emailAddresses: Array<{ emailAddress: string }>
-    firstName?: string | null
-    lastName?: string | null
-    imageUrl?: string | null
-  }): Promise<User> {
-    const serverClient = createServerClient()
-    
-    const userData: UserInsert = {
-      clerk_id: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress || '',
-      name: clerkUser.firstName && clerkUser.lastName 
-        ? `${clerkUser.firstName} ${clerkUser.lastName}` 
-        : clerkUser.firstName || clerkUser.lastName || null,
-      avatar_url: clerkUser.imageUrl || null
-    }
-    
-    const { data, error } = await serverClient
-      .from('users')
-      .upsert(userData, { 
-        onConflict: 'clerk_id',
-        ignoreDuplicates: false 
-      })
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
-  }
-}

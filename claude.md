@@ -8,7 +8,133 @@
 4. Then, begin working on the todo items, marking them as complete as you go.
 5. Please every step of the way just give me a high level explanation of what changes you made
 6. Make every task and code change you do as simple as possible. We want to avoid making any massive or complex changes. Every change should impact as little code as possible. Everything is about simplicity.
-7. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+7. **SECURITY REQUIREMENT**: Before marking any feature complete, conduct a security review following the Security Best Practices section below. Fix any vulnerabilities found.
+8. Finally, add a review section to the todo.md file with a summary of the changes you made and any other relevant information.
+
+## SECURITY BEST PRACTICES
+
+### Overview
+**IMPORTANT**: All code must follow these security practices from the start. Security is not optional or an afterthought. Every feature must be secure by default.
+
+### 1. Authentication & Authorization
+- **Always verify authentication** in API routes using `auth()` from Clerk
+- **Never trust client-side authentication** - always verify server-side
+- **Check authorization** - authenticated users should only access their own data
+- **Use Row Level Security (RLS)** in Supabase for additional protection
+
+### 2. Input Validation & Sanitization
+- **Validate ALL inputs** using Zod schemas before processing
+- **Set reasonable limits** on string lengths, array sizes, and numeric ranges
+- **Sanitize user input** before displaying or storing
+- **Escape special characters** in database queries to prevent injection
+
+Example:
+```typescript
+const schema = z.object({
+  page: z.coerce.number().min(1).max(1000),
+  limit: z.coerce.number().min(1).max(100),
+  search: z.string().max(100).optional(),
+  status: z.enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled']).optional()
+})
+```
+
+### 3. Sensitive Data Protection
+- **NEVER log sensitive data** (user IDs, emails, tokens, etc.)
+- **NEVER send sensitive data to the client** unnecessarily
+- **Use server-only files** for code that handles secrets:
+  ```typescript
+  import 'server-only'  // Add this to files with sensitive operations
+  ```
+- **Service role keys** must ONLY be used in server-only files
+- **Remove console.log statements** before committing code
+
+### 4. API Security
+- **All API routes must:**
+  - Authenticate the user
+  - Validate input parameters
+  - Handle errors without leaking information
+  - Return generic error messages to clients
+  - Log detailed errors server-side only
+
+Example API route structure:
+```typescript
+export async function GET(request: NextRequest) {
+  try {
+    // 1. Authentication
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 2. Input validation
+    const validation = schema.safeParse(params)
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
+    }
+
+    // 3. Authorization & business logic
+    // ... your code here ...
+
+    // 4. Return data (filter sensitive fields)
+    return NextResponse.json({ data: filteredData })
+  } catch (error) {
+    // 5. Generic error response
+    return NextResponse.json({ error: 'Request failed' }, { status: 500 })
+  }
+}
+```
+
+### 5. Database Security
+- **Use parameterized queries** (Supabase client does this automatically)
+- **Apply database-level filtering** instead of fetching all data and filtering in memory
+- **Use proper indexes** to prevent slow queries that could cause DoS
+- **Implement proper RLS policies** that work with your auth system
+
+### 6. Client-Side Security
+- **Never expose API keys** or secrets in client code
+- **Validate data on the client** for UX, but ALWAYS validate server-side
+- **Use HTTPS** for all communications
+- **Implement proper CORS** settings
+
+### 7. Error Handling
+- **Client errors** should be generic: "Request failed", "Invalid input"
+- **Server logs** can contain detailed error information
+- **Never expose** stack traces, database errors, or system information to clients
+
+### 8. Security Checklist for New Features
+
+Before marking any feature complete, verify:
+
+- [ ] All API routes check authentication
+- [ ] All inputs are validated with Zod schemas
+- [ ] No sensitive data in console.log statements
+- [ ] Service role key is only used in server-only files
+- [ ] Database queries filter data at the database level
+- [ ] Error messages don't leak system information
+- [ ] No hardcoded secrets or API keys
+- [ ] Authorization checks ensure users only access their own data
+- [ ] Rate limiting is considered for resource-intensive endpoints
+- [ ] File uploads are validated and size-limited
+
+### 9. Common Vulnerabilities to Avoid
+
+1. **SQL Injection** - Always use parameterized queries
+2. **XSS** - Sanitize all user input before rendering
+3. **CSRF** - Use proper tokens for state-changing operations
+4. **Information Disclosure** - Generic error messages, no sensitive logs
+5. **Broken Access Control** - Always verify ownership of resources
+6. **Security Misconfiguration** - Follow the principle of least privilege
+7. **Insufficient Logging** - Log security events for monitoring
+
+### 10. When to Use Server-Only Code
+
+Create server-only files when:
+- Using service role keys or admin privileges
+- Processing sensitive data (tokens, passwords)
+- Performing administrative operations
+- Integrating with external services using secret keys
+
+Mark these files with `import 'server-only'` at the top.
 
 ## 1. PROJECT OVERVIEW
 
@@ -206,6 +332,13 @@ whatdidishop/
 
 ## 4. DEVELOPMENT WORKFLOW
 
+### Security During Development
+1. **Never commit sensitive data** - Check files before committing
+2. **Use environment variables** - Never hardcode secrets
+3. **Test with minimal privileges** - Don't use admin keys for testing
+4. **Review logs** - Ensure no sensitive data is logged
+5. **Run security checks** - Use the security checklist before completing features
+
 ### How to Run Locally
 ```bash
 # RECOMMENDED: Use helper scripts (avoids 2-minute timeout issues)
@@ -268,6 +401,15 @@ These scripts run the server in the background without timeout issues.
 
 ## 5. API DOCUMENTATION
 
+### API Security Requirements
+**IMPORTANT**: All API endpoints must implement these security measures:
+
+1. **Authentication**: Verify user with `await auth()` from Clerk
+2. **Input Validation**: Use Zod schemas for all parameters
+3. **Authorization**: Ensure users can only access their own data
+4. **Error Handling**: Return generic error messages to clients
+5. **Rate Limiting**: Consider implementing for resource-intensive endpoints
+
 ### Authentication Endpoints
 ```typescript
 // OAuth callback endpoints
@@ -284,10 +426,30 @@ DELETE /api/auth/email-accounts/:id
 // Get all orders for authenticated user
 GET /api/orders
 Query params:
-  - page: number
-  - limit: number
+  - page: number (1-1000)
+  - limit: number (1-100)
   - status: 'pending' | 'shipped' | 'delivered'
-  - search: string
+  - search: string (max 100 chars)
+
+// Security implementation example:
+export async function GET(request: NextRequest) {
+  // 1. Auth check
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
+  // 2. Input validation
+  const params = orderQuerySchema.safeParse(searchParams)
+  if (!params.success) return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 })
+  
+  // 3. Get user and verify ownership
+  const user = await serverUserQueries.findByClerkId(userId)
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+  
+  // 4. Fetch data with server-side filtering
+  const data = await serverOrderQueries.getByUserId(user.id, params.data)
+  
+  return NextResponse.json(data)
+}
 
 // Get single order
 GET /api/orders/:id
@@ -295,11 +457,11 @@ GET /api/orders/:id
 // Create manual order
 POST /api/orders
 Body: {
-  orderNumber: string
-  retailer: string
-  amount: number
-  orderDate: string
-  items: OrderItem[]
+  orderNumber: string (required, max 100)
+  retailer: string (required, max 100)
+  amount: number (required, positive)
+  orderDate: string (required, ISO date)
+  items: OrderItem[] (required, min 1)
 }
 
 // Update order

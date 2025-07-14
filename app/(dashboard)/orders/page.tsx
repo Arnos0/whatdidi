@@ -1,16 +1,46 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/dashboard/empty-state'
 import { Button } from '@/components/ui/button'
 import { ShoppingBag, Plus } from 'lucide-react'
+import { OrderList } from '@/components/orders/order-list'
+import { OrderFilters } from '@/components/orders/order-filters'
+import { Pagination } from '@/components/ui/pagination'
+import { useOrders } from '@/hooks/use-orders'
 
-export default async function OrdersPage() {
-  const { userId } = await auth()
+export default function OrdersPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [itemsPerPage, setItemsPerPage] = useState(
+    parseInt(searchParams.get('limit') || '10')
+  )
+  
+  const { data, isLoading, error, refetch } = useOrders()
 
-  if (!userId) {
-    redirect('/sign-in')
+  // Sync user on mount
+  useEffect(() => {
+    fetch('/api/sync-user', { method: 'POST' })
+      .catch(() => {
+        // Silently handle sync errors
+      })
+  }, [])
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('page', page.toString())
+    router.push(`/orders?${params.toString()}`)
+  }
+
+  const handleItemsPerPageChange = (limit: number) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('limit', limit.toString())
+    params.set('page', '1') // Reset to first page
+    setItemsPerPage(limit)
+    router.push(`/orders?${params.toString()}`)
   }
 
   const breadcrumbs = [
@@ -24,22 +54,73 @@ export default async function OrdersPage() {
         title="Orders" 
         breadcrumbs={breadcrumbs}
         actions={
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Order
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test-data', { method: 'POST' })
+                  if (response.ok) {
+                    refetch() // Refetch orders instead of reloading
+                  }
+                } catch (err) {
+                  // Silently handle errors
+                }
+              }}
+            >
+              Generate Test Data
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Order
+            </Button>
+          </div>
         }
       />
       
-      <Card className="mx-4 sm:mx-0">
-        <div className="p-6">
-          <EmptyState
-            icon={<ShoppingBag className="h-6 w-6 text-muted-foreground" />}
-            title="No orders found"
-            description="You haven't added any orders yet. Start by adding your first order manually or by connecting your email account to automatically import orders."
-          />
-        </div>
-      </Card>
+      <div className="mx-4 sm:mx-0 space-y-6">
+        {/* Filters */}
+        <Card className="p-6">
+          <OrderFilters />
+        </Card>
+
+        {/* Orders List */}
+        {error ? (
+          <Card className="p-6">
+            <div className="text-center text-destructive">
+              Failed to load orders. Please try again.
+            </div>
+          </Card>
+        ) : isLoading ? (
+          <OrderList orders={[]} isLoading={true} />
+        ) : data && data.orders.length > 0 ? (
+          <>
+            <OrderList orders={data.orders} />
+            
+            {/* Pagination */}
+            {data.pagination.totalPages > 1 && (
+              <Card className="p-4">
+                <Pagination
+                  currentPage={data.pagination.page}
+                  totalPages={data.pagination.totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={data.pagination.total}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              </Card>
+            )}
+          </>
+        ) : (
+          <Card className="p-6">
+            <EmptyState
+              icon={<ShoppingBag className="h-6 w-6 text-muted-foreground" />}
+              title="No orders found"
+              description="You haven't added any orders yet. Start by adding your first order manually or by connecting your email account to automatically import orders."
+            />
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
