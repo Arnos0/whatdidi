@@ -192,6 +192,16 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 
 *Note: Currently using Clerk Account Portal for verification (working solution). Custom verification pages would provide more control and branding but require complex implementation.*
 
+#### Social Authentication (OAuth)
+- [ ] **FUTURE:** Configure Google OAuth in Clerk
+- [ ] **FUTURE:** Set up Google Cloud project and OAuth credentials
+- [ ] **FUTURE:** Configure Microsoft OAuth for Outlook sign-in
+- [ ] **FUTURE:** Add Apple Sign-In for iOS users
+- [ ] **FUTURE:** Implement social account linking
+- [ ] **FUTURE:** Handle OAuth error cases gracefully
+
+*Note: Currently using email/password authentication only. Social logins can be added later for better user experience but require additional configuration and API keys.*
+
 ## Current Status
 **Phase**: 6 - Dashboard Layout ✅ COMPLETED  
 **Progress**: 
