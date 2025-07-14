@@ -1,13 +1,12 @@
-import { SignIn } from '@clerk/nextjs'
+import { SignUp } from '@clerk/nextjs'
 
-export default function SignInPage() {
+export default function SignUpVerifyPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md">
-        <SignIn 
-          path="/sign-in"
+        <SignUp 
+          path="/sign-up/verify"
           routing="path"
-          signUpUrl="/sign-up"
           appearance={{
             elements: {
               rootBox: "mx-auto",
