@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { ShoppingBag, Plus } from 'lucide-react'
 
 export default async function OrdersPage() {
-  const { userId } = auth()
+  const { userId } = await auth()
 
   if (!userId) {
     redirect('/sign-in')

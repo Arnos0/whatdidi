@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/dashboard/empty-state'
 import { Settings } from 'lucide-react'
 
 export default async function SettingsPage() {
-  const { userId } = auth()
+  const { userId } = await auth()
 
   if (!userId) {
     redirect('/sign-in')

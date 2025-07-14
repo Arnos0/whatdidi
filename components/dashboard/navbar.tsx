@@ -4,7 +4,6 @@ import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { UserMenu } from './user-menu'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 
 const navigation = [
