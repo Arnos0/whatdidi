@@ -1,8 +1,10 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import type { Order } from '@/lib/supabase/types'
+import type { CreateOrderInput } from '@/lib/validation/order-form'
+import { toast } from 'sonner'
 
 interface OrdersResponse {
   orders: Order[]
@@ -57,5 +59,63 @@ export function useOrders(options?: UseOrdersOptions) {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
+  })
+}
+
+export function useCreateOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: CreateOrderInput) => {
+      const formData = new FormData()
+      
+      // Add all fields to FormData
+      formData.append('orderNumber', data.orderNumber)
+      formData.append('retailer', data.retailer)
+      formData.append('amount', data.amount.toString())
+      formData.append('currency', data.currency)
+      formData.append('status', data.status)
+      formData.append('orderDate', data.orderDate.toISOString())
+      
+      if (data.trackingNumber) formData.append('trackingNumber', data.trackingNumber)
+      if (data.carrier) formData.append('carrier', data.carrier)
+      if (data.estimatedDelivery) formData.append('estimatedDelivery', data.estimatedDelivery.toISOString())
+      
+      // Add items as JSON
+      formData.append('items', JSON.stringify(data.items))
+      
+      // Add receipt file if provided
+      if (data.receiptFile) {
+        formData.append('receiptFile', data.receiptFile)
+      }
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to create order'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // If response is not JSON, use default error message
+        }
+        throw new Error(errorMessage)
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate orders query to refetch
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      // Also invalidate retailers to include the new one
+      queryClient.invalidateQueries({ queryKey: ['retailers'] })
+      toast.success('Order created successfully!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create order')
+    },
   })
 }

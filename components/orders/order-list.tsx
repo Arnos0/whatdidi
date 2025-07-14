@@ -11,7 +11,7 @@ interface OrderListProps {
   isLoading?: boolean
 }
 
-const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
+const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
   pending: { 
     label: 'Pending', 
     variant: 'secondary',
@@ -29,7 +29,7 @@ const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 's
   },
   delivered: { 
     label: 'Delivered', 
-    variant: 'success',
+    variant: 'outline',
     icon: <CheckCircle className="h-3 w-3" />
   },
   cancelled: { 

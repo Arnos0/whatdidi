@@ -10,7 +10,8 @@ import { ShoppingBag, Plus } from 'lucide-react'
 import { OrderList } from '@/components/orders/order-list'
 import { OrderFilters } from '@/components/orders/order-filters'
 import { Pagination } from '@/components/ui/pagination'
-import { useOrders } from '@/hooks/use-orders'
+import { useOrders, useCreateOrder } from '@/hooks/use-orders'
+import { CreateOrderDialog } from '@/components/orders/create-order-dialog'
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -18,8 +19,10 @@ export default function OrdersPage() {
   const [itemsPerPage, setItemsPerPage] = useState(
     parseInt(searchParams.get('limit') || '10')
   )
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
   
   const { data, isLoading, error, refetch } = useOrders()
+  const createOrder = useCreateOrder()
 
   // Sync user on mount
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function OrdersPage() {
             >
               Generate Test Data
             </Button>
-            <Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Order
             </Button>
@@ -121,6 +124,16 @@ export default function OrdersPage() {
           </Card>
         )}
       </div>
+
+      <CreateOrderDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreateOrder={async (data) => {
+          await createOrder.mutateAsync(data)
+          setCreateDialogOpen(false)
+        }}
+        isCreating={createOrder.isPending}
+      />
     </div>
   )
 }

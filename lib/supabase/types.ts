@@ -89,6 +89,7 @@ export interface Database {
           email_account_id: string | null
           raw_email_data: Json | null
           is_manual: boolean
+          receipt_url: string | null
           created_at: string
           updated_at: string
         }
@@ -107,6 +108,7 @@ export interface Database {
           email_account_id?: string | null
           raw_email_data?: Json | null
           is_manual?: boolean
+          receipt_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -125,6 +127,7 @@ export interface Database {
           email_account_id?: string | null
           raw_email_data?: Json | null
           is_manual?: boolean
+          receipt_url?: string | null
           created_at?: string
           updated_at?: string
         }

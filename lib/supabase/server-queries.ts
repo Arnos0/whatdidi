@@ -1,5 +1,5 @@
 import 'server-only'
-import { createServerClient } from './client'
+import { createServerClient } from './server-client'
 import type { 
   User, 
   UserInsert, 
