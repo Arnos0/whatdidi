@@ -11,7 +11,7 @@ export async function POST() {
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Clerk user not found' }, { status: 404 })
     }
 
     const user = await serverUserQueries.syncFromClerk({
@@ -26,8 +26,9 @@ export async function POST() {
 
     return NextResponse.json({ success: true, user })
   } catch (error) {
+    console.error('Sync user error:', error)
     return NextResponse.json(
-      { error: 'Failed to sync user' },
+      { error: 'Failed to sync user', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
