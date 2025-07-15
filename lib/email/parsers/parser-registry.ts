@@ -27,7 +27,8 @@ export class ParserRegistry {
    * Find a parser that can handle the given email
    */
   static findParser(email: GmailMessage): EmailParser | null {
-    for (const parser of this.parsers.values()) {
+    const parsers = Array.from(this.parsers.values())
+    for (const parser of parsers) {
       if (parser.canParse(email)) {
         return parser
       }

@@ -143,7 +143,7 @@ export function EmailScanDialog({
               <div className="rounded-lg bg-muted p-3">
                 <p className="text-sm text-muted-foreground">
                   <strong>Note:</strong> The first scan may take a few minutes depending on the number of emails.
-                  We'll process emails in batches to find order confirmations from supported retailers.
+                  We&apos;ll process emails in batches to find order confirmations from supported retailers.
                 </p>
               </div>
             </>

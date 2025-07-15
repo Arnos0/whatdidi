@@ -60,9 +60,9 @@ export function useScanStatus(accountId: string, enabled = true) {
     queryKey: ['scan-status', accountId],
     queryFn: () => getScanStatus(accountId),
     enabled,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Poll while scan is running
-      const status = data?.scanJob?.status
+      const status = query.state.data?.scanJob?.status
       if (status === 'running' || status === 'pending') {
         return 2000 // Poll every 2 seconds
       }

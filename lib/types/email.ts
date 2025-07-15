@@ -55,17 +55,21 @@ export interface GmailMessage {
   labelIds: string[]
   snippet: string
   payload: {
+    mimeType?: string
     headers: Array<{
       name: string
       value: string
     }>
     body?: {
       data?: string
+      size?: number
     }
     parts?: Array<{
       mimeType: string
+      filename?: string
       body?: {
         data?: string
+        size?: number
       }
     }>
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod'
 import { serverUserQueries, serverEmailAccountQueries } from '@/lib/supabase/server-queries'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/server-client'
 import { GmailService } from '@/lib/email/gmail-service'
 import { registerParsers, ParserRegistry, EmailClassifier } from '@/lib/email/parsers'
 import type { DateRange, ScanType } from '@/lib/types/email'
@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Create a new scan job
-    const supabase = createClient()
+    const supabase = createServerClient()
     const { data: scanJob, error: jobError } = await supabase
       .from('email_scan_jobs')
       .insert({
@@ -102,7 +102,7 @@ export async function GET(
     }
 
     // Get latest scan job for this email account
-    const supabase = createClient()
+    const supabase = createServerClient()
     const { data: scanJobs, error } = await supabase
       .from('email_scan_jobs')
       .select('*')
@@ -144,7 +144,7 @@ async function processScanJob(
   emailAccount: any,
   dateRange: DateRange
 ) {
-  const supabase = createClient()
+  const supabase = createServerClient()
 
   try {
     // Update job status to running
