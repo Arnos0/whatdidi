@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { EmailProvider } from '@/lib/supabase/types'
-import { Mail, Clock, Trash2, AlertCircle } from 'lucide-react'
+import { Mail, Clock, Trash2, AlertCircle, Search } from 'lucide-react'
+import { EmailScanDialog } from './email-scan-dialog'
 
 interface EmailAccountCardProps {
   id: string
@@ -40,10 +42,12 @@ export function EmailAccountCard({
   onDisconnect,
   isDisconnecting = false
 }: EmailAccountCardProps) {
+  const [scanDialogOpen, setScanDialogOpen] = useState(false)
   const config = providerConfig[provider]
 
   return (
-    <Card className="p-6">
+    <>
+      <Card className="p-6">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-4">
           <div className={`text-2xl ${config.color}`}>
@@ -84,6 +88,15 @@ export function EmailAccountCard({
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setScanDialogOpen(true)}
+            className="gap-2"
+          >
+            <Search className="h-4 w-4" />
+            Scan Emails
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onDisconnect(id)}
             disabled={isDisconnecting}
             className="gap-2"
@@ -94,5 +107,14 @@ export function EmailAccountCard({
         </div>
       </div>
     </Card>
+    
+    <EmailScanDialog
+      accountId={id}
+      email={email}
+      provider={provider}
+      open={scanDialogOpen}
+      onOpenChange={setScanDialogOpen}
+    />
+    </>
   )
 }

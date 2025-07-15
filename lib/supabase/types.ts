@@ -49,6 +49,10 @@ export interface Database {
           token_expires_at: string | null
           last_scan_at: string | null
           scan_enabled: boolean
+          scan_config: Json
+          last_full_scan_at: string | null
+          total_emails_processed: number
+          total_orders_created: number
           created_at: string
           updated_at: string
         }
@@ -62,6 +66,10 @@ export interface Database {
           token_expires_at?: string | null
           last_scan_at?: string | null
           scan_enabled?: boolean
+          scan_config?: Json
+          last_full_scan_at?: string | null
+          total_emails_processed?: number
+          total_orders_created?: number
           created_at?: string
           updated_at?: string
         }
@@ -75,8 +83,115 @@ export interface Database {
           token_expires_at?: string | null
           last_scan_at?: string | null
           scan_enabled?: boolean
+          scan_config?: Json
+          last_full_scan_at?: string | null
+          total_emails_processed?: number
+          total_orders_created?: number
           created_at?: string
           updated_at?: string
+        }
+      }
+      email_scan_jobs: {
+        Row: {
+          id: string
+          email_account_id: string
+          status: string
+          scan_type: string
+          date_from: string | null
+          date_to: string | null
+          started_at: string | null
+          completed_at: string | null
+          emails_found: number
+          emails_processed: number
+          orders_created: number
+          errors_count: number
+          last_error: string | null
+          next_page_token: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          email_account_id: string
+          status?: string
+          scan_type?: string
+          date_from?: string | null
+          date_to?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          emails_found?: number
+          emails_processed?: number
+          orders_created?: number
+          errors_count?: number
+          last_error?: string | null
+          next_page_token?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email_account_id?: string
+          status?: string
+          scan_type?: string
+          date_from?: string | null
+          date_to?: string | null
+          started_at?: string | null
+          completed_at?: string | null
+          emails_found?: number
+          emails_processed?: number
+          orders_created?: number
+          errors_count?: number
+          last_error?: string | null
+          next_page_token?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      processed_emails: {
+        Row: {
+          id: string
+          email_account_id: string
+          gmail_message_id: string
+          gmail_thread_id: string | null
+          email_date: string | null
+          subject: string | null
+          sender: string | null
+          retailer_detected: string | null
+          order_created: boolean
+          order_id: string | null
+          parse_error: string | null
+          processed_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email_account_id: string
+          gmail_message_id: string
+          gmail_thread_id?: string | null
+          email_date?: string | null
+          subject?: string | null
+          sender?: string | null
+          retailer_detected?: string | null
+          order_created?: boolean
+          order_id?: string | null
+          parse_error?: string | null
+          processed_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email_account_id?: string
+          gmail_message_id?: string
+          gmail_thread_id?: string | null
+          email_date?: string | null
+          subject?: string | null
+          sender?: string | null
+          retailer_detected?: string | null
+          order_created?: boolean
+          order_id?: string | null
+          parse_error?: string | null
+          processed_at?: string
+          created_at?: string
         }
       }
       orders: {
