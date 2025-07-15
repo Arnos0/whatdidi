@@ -34,28 +34,45 @@ export const serverUserQueries = {
     lastName?: string | null
     imageUrl?: string | null
   }): Promise<User> {
-    const serverClient = createServerClient()
-    
-    const userData: UserInsert = {
-      clerk_id: clerkUser.id,
-      email: clerkUser.emailAddresses[0]?.emailAddress || '',
-      name: clerkUser.firstName && clerkUser.lastName 
-        ? `${clerkUser.firstName} ${clerkUser.lastName}` 
-        : clerkUser.firstName || clerkUser.lastName || null,
-      avatar_url: clerkUser.imageUrl || null
+    try {
+      const serverClient = createServerClient()
+      
+      if (!clerkUser.emailAddresses || clerkUser.emailAddresses.length === 0) {
+        throw new Error('User has no email addresses')
+      }
+      
+      const userData: UserInsert = {
+        clerk_id: clerkUser.id,
+        email: clerkUser.emailAddresses[0].emailAddress,
+        name: clerkUser.firstName && clerkUser.lastName 
+          ? `${clerkUser.firstName} ${clerkUser.lastName}` 
+          : clerkUser.firstName || clerkUser.lastName || null,
+        avatar_url: clerkUser.imageUrl || null
+      }
+      
+      const { data, error } = await serverClient
+        .from('users')
+        .upsert(userData, { 
+          onConflict: 'clerk_id',
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single()
+      
+      if (error) {
+        console.error('Supabase upsert error:', error)
+        throw new Error(`Database error: ${error.message}`)
+      }
+      
+      if (!data) {
+        throw new Error('No data returned from upsert')
+      }
+      
+      return data
+    } catch (error) {
+      console.error('syncFromClerk error:', error)
+      throw error
     }
-    
-    const { data, error } = await serverClient
-      .from('users')
-      .upsert(userData, { 
-        onConflict: 'clerk_id',
-        ignoreDuplicates: false 
-      })
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
   }
 }
 
