@@ -23,14 +23,14 @@ export function UserSyncProvider({ children }: { children: React.ReactNode }) {
 
         if (!response.ok) {
           const errorData = await response.text()
-          console.error('Failed to sync user:', response.status, errorData)
+          // Sync failed, will retry on next render
           // Allow retry on error by resetting the flag
           hasSynced.current = false
         } else {
-          console.log('User synced successfully')
+          // User sync completed
         }
       } catch (error) {
-        console.error('Error syncing user:', error)
+        // Sync error, will retry on next render
         // Allow retry on error by resetting the flag
         hasSynced.current = false
       }

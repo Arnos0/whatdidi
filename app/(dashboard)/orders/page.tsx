@@ -49,27 +49,10 @@ export default function OrdersPage() {
         title="Orders" 
         breadcrumbs={breadcrumbs}
         actions={
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/test-data', { method: 'POST' })
-                  if (response.ok) {
-                    refetch() // Refetch orders instead of reloading
-                  }
-                } catch (err) {
-                  // Silently handle errors
-                }
-              }}
-            >
-              Generate Test Data
-            </Button>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Order
-            </Button>
-          </div>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Order
+          </Button>
         }
       />
       

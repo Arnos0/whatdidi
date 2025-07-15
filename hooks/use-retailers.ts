@@ -22,7 +22,7 @@ export function useRetailers() {
         return response.json()
       } catch (error) {
         // Fallback to default retailers on error
-        console.error('Failed to fetch retailers:', error)
+        // Failed to fetch retailers, using default fallback
         return { retailers: RETAILERS.filter(r => r !== 'Other') }
       }
     },

@@ -60,7 +60,6 @@ export const serverUserQueries = {
         .single()
       
       if (error) {
-        console.error('Supabase upsert error:', error)
         throw new Error(`Database error: ${error.message}`)
       }
       
@@ -70,7 +69,6 @@ export const serverUserQueries = {
       
       return data
     } catch (error) {
-      console.error('syncFromClerk error:', error)
       throw error
     }
   }
