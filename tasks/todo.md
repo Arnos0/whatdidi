@@ -187,6 +187,11 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 ### Future Improvements (Low Priority)
 
 #### Additional Email Provider Support
+- [ ] **FUTURE:** Microsoft/Outlook OAuth Integration
+  - [ ] Configure Microsoft OAuth in Azure Portal when access is available
+  - [ ] Add https://whatdidi.shop/api/auth/microsoft/callback to redirect URIs
+  - [ ] Test Outlook/Hotmail account connections
+  - [ ] Update documentation for Microsoft OAuth setup
 - [ ] **FUTURE:** iCloud Mail Integration
   - [ ] Implement app-specific password support
   - [ ] Add iCloud IMAP configuration
@@ -223,18 +228,16 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 
 ### OAuth Production Setup (Required for Email Integration)
 **Priority**: HIGH - Complete before Phase 11
-1. **Configure Google OAuth for Production**
-   - Add `https://whatdidi.shop/api/auth/google/callback` to authorized redirect URIs in Google Cloud Console
-   - Keep localhost URI for development
+1. **Configure Google OAuth for Production** ✅
+   - Add `https://whatdidi.shop/api/auth/google/callback` to authorized redirect URIs in Google Cloud Console ✅
+   - Keep localhost URI for development ✅
 
-2. **Configure Microsoft OAuth for Production**
-   - Add `https://whatdidi.shop/api/auth/microsoft/callback` to redirect URIs in Azure Portal
-   - Keep localhost URI for development
-
-3. **Update Vercel Environment Variables**
+2. **Update Vercel Environment Variables**
+   - Set `GOOGLE_CLIENT_ID` from Google Cloud Console
+   - Set `GOOGLE_CLIENT_SECRET` from Google Cloud Console
    - Set `GOOGLE_REDIRECT_URI=https://whatdidi.shop/api/auth/google/callback`
-   - Set `MICROSOFT_REDIRECT_URI=https://whatdidi.shop/api/auth/microsoft/callback`
-   - Set `TOKEN_ENCRYPTION_KEY` with a secure random value (use `openssl rand -base64 32`)
+   - Set `TOKEN_ENCRYPTION_KEY` with a secure random value: `UPVS8I67QL2zOAcQ5AvjzWoyjEUCIQjzNVwwS6RiSA8=`
+   - Note: Microsoft OAuth variables can be added later when Azure access is available
 
 ### Previous Production Issue (If Still Relevant)
 **URGENT**: Production users getting "User not found" error when creating orders.
