@@ -6,6 +6,7 @@ import { DashboardHeader } from '@/components/dashboard/header'
 import { EmailAccountsList } from '@/components/settings/email-accounts-list'
 import { toast } from 'sonner'
 
+// OAuth environment configured for production
 export default function SettingsPage() {
   const searchParams = useSearchParams()
   
