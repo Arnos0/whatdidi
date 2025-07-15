@@ -9,4 +9,16 @@ export const orderQuerySchema = z.object({
   dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
+export const orderIdSchema = z.object({
+  id: z.string().uuid()
+})
+
+export const orderUpdateSchema = z.object({
+  status: z.enum(['pending', 'processing', 'shipped', 'delivered', 'cancelled']).optional(),
+  tracking_number: z.string().max(100).optional(),
+  carrier: z.string().max(50).optional(),
+  estimated_delivery: z.string().datetime().optional(),
+})
+
 export type OrderQueryParams = z.infer<typeof orderQuerySchema>
+export type OrderUpdateData = z.infer<typeof orderUpdateSchema>

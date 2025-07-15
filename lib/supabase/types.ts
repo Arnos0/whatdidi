@@ -48,7 +48,9 @@ export interface Database {
           refresh_token: string | null
           token_expires_at: string | null
           last_scan_at: string | null
+          scan_enabled: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -59,7 +61,9 @@ export interface Database {
           refresh_token?: string | null
           token_expires_at?: string | null
           last_scan_at?: string | null
+          scan_enabled?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -70,7 +74,9 @@ export interface Database {
           refresh_token?: string | null
           token_expires_at?: string | null
           last_scan_at?: string | null
+          scan_enabled?: boolean
           created_at?: string
+          updated_at?: string
         }
       }
       orders: {

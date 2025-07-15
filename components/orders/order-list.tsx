@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -40,6 +41,12 @@ const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 's
 }
 
 export function OrderList({ orders, isLoading }: OrderListProps) {
+  const router = useRouter()
+
+  const handleOrderClick = (orderId: string) => {
+    router.push(`/orders/${orderId}`)
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -81,7 +88,11 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                 {orders.map((order) => {
                   const statusInfo = statusConfig[order.status as OrderStatus]
                   return (
-                    <tr key={order.id} className="border-b hover:bg-muted/50 cursor-pointer transition-colors">
+                    <tr 
+                      key={order.id} 
+                      className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => handleOrderClick(order.id)}
+                    >
                       <td className="px-6 py-4 font-medium">
                         #{order.order_number}
                       </td>
@@ -129,7 +140,11 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
         {orders.map((order) => {
           const statusInfo = statusConfig[order.status as OrderStatus]
           return (
-            <Card key={order.id} className="p-4 cursor-pointer hover:shadow-lg transition-shadow">
+            <Card 
+              key={order.id} 
+              className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleOrderClick(order.id)}
+            >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
                   <div>

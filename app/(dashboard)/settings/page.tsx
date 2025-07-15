@@ -1,16 +1,35 @@
-import { auth } from '@clerk/nextjs/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/header'
-import { Card } from '@/components/ui/card'
-import { EmptyState } from '@/components/dashboard/empty-state'
-import { Settings } from 'lucide-react'
+import { EmailAccountsList } from '@/components/settings/email-accounts-list'
+import { toast } from 'sonner'
 
-export default async function SettingsPage() {
-  const { userId } = await auth()
-
-  if (!userId) {
-    redirect('/sign-in')
-  }
+export default function SettingsPage() {
+  const searchParams = useSearchParams()
+  
+  useEffect(() => {
+    // Handle OAuth success/error messages
+    const success = searchParams.get('success')
+    const error = searchParams.get('error')
+    const description = searchParams.get('description')
+    
+    if (success === 'email_connected') {
+      toast.success('Email account connected successfully!')
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        unauthorized: 'You need to be signed in to connect an email account',
+        user_not_found: 'User account not found',
+        invalid_callback: 'Invalid OAuth callback parameters',
+        invalid_state: 'Invalid OAuth state - please try again',
+        oauth_failed: 'Failed to connect email account',
+        access_denied: 'Access denied - you cancelled the authorization'
+      }
+      
+      toast.error(errorMessages[error] || `Connection failed: ${error}`)
+    }
+  }, [searchParams])
 
   const breadcrumbs = [
     { name: 'Dashboard', href: '/dashboard' },
@@ -24,15 +43,9 @@ export default async function SettingsPage() {
         breadcrumbs={breadcrumbs}
       />
       
-      <Card className="mx-4 sm:mx-0">
-        <div className="p-6">
-          <EmptyState
-            icon={<Settings className="h-6 w-6 text-muted-foreground" />}
-            title="Settings coming soon"
-            description="User settings, email account management, and preferences will be available here soon."
-          />
-        </div>
-      </Card>
+      <div className="mx-4 sm:mx-0">
+        <EmailAccountsList />
+      </div>
     </div>
   )
 }

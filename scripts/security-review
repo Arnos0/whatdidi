@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# Security Review Script for WhatDidiShop
+# Extracts and displays security best practices from claude.md
+
+# Colors for better readability
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Find the claude.md file
+CLAUDE_MD=""
+if [ -f "claude.md" ]; then
+    CLAUDE_MD="claude.md"
+elif [ -f "../claude.md" ]; then
+    CLAUDE_MD="../claude.md"
+elif [ -f "../../claude.md" ]; then
+    CLAUDE_MD="../../claude.md"
+elif [ -f "/home/arno/Projects/whatdidi/claude.md" ]; then
+    CLAUDE_MD="/home/arno/Projects/whatdidi/claude.md"
+else
+    echo -e "${RED}Error: claude.md file not found${NC}"
+    exit 1
+fi
+
+echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD}${BLUE}                        SECURITY REVIEW - WhatDidiShop                         ${NC}"
+echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo
+
+# Extract security section from claude.md
+awk '
+BEGIN { 
+    in_security = 0
+    print_line = 0
+}
+/^## SECURITY BEST PRACTICES/ { 
+    in_security = 1
+    print_line = 1
+}
+/^## [0-9]+\. / && in_security { 
+    exit
+}
+in_security && print_line {
+    # Add color to headers
+    if ($0 ~ /^###/) {
+        gsub(/^### /, "\033[1;33m### ", $0)
+        print $0 "\033[0m"
+    } else if ($0 ~ /^- \*\*/) {
+        gsub(/\*\*/, "\033[1m", $0)
+        gsub(/\*\*/, "\033[0m", $0)
+        print $0
+    } else if ($0 ~ /^- \[ \]/) {
+        print "\033[0;34m" $0 "\033[0m"
+    } else {
+        print $0
+    }
+}
+' "$CLAUDE_MD"
+
+echo
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD}${GREEN}                              Quick Commands                                   ${NC}"
+echo -e "${BOLD}${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo
+echo -e "${YELLOW}Run security checks:${NC}"
+echo "  grep -r 'console.log' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' ."
+echo "  grep -r 'SUPABASE_SERVICE_ROLE_KEY' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules ."
+echo "  grep -r 'process.env' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules . | grep -v '.env'"
+echo
+echo -e "${YELLOW}Check authentication in API routes:${NC}"
+echo "  grep -r 'export async function' app/api --include='*.ts' -A 5 | grep -B 5 'auth()'"
+echo
+echo -e "${YELLOW}Check for sensitive data exposure:${NC}"
+echo "  grep -r 'userId\\|email\\|token' --include='*.ts' --include='*.tsx' . | grep 'console.log'"
+echo

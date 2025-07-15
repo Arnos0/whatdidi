@@ -88,21 +88,21 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - [x] Add success/error handling
 - [x] Update order list after creation
 
-### Phase 9: Order Details
-- [ ] Create order detail API route
-- [ ] Create OrderDetail component
-- [ ] Display order items
-- [ ] Show delivery tracking info
-- [ ] Add order timeline
-- [ ] Implement edit functionality
+### Phase 9: Order Details ✅
+- [x] Create order detail API route
+- [x] Create OrderDetail component
+- [x] Display order items
+- [x] Show delivery tracking info
+- [x] Add order timeline
+- [x] Implement edit functionality
 
-### Phase 10: Email Integration - OAuth
-- [ ] Set up Google OAuth credentials
-- [ ] Implement Gmail OAuth flow
-- [ ] Set up Microsoft OAuth credentials
-- [ ] Implement Outlook OAuth flow
-- [ ] Store encrypted tokens
-- [ ] Create email accounts management UI
+### Phase 10: Email Integration - OAuth ✅
+- [x] Set up Google OAuth credentials
+- [x] Implement Gmail OAuth flow
+- [x] Set up Microsoft OAuth credentials
+- [x] Implement Outlook OAuth flow
+- [x] Store encrypted tokens
+- [x] Create email accounts management UI
 
 ### Phase 11: Email Parsing - Core
 - [ ] Create email fetching service
@@ -186,6 +186,19 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 
 ### Future Improvements (Low Priority)
 
+#### Additional Email Provider Support
+- [ ] **FUTURE:** iCloud Mail Integration
+  - [ ] Implement app-specific password support
+  - [ ] Add iCloud IMAP configuration
+  - [ ] Create setup guide for iCloud users
+- [ ] **FUTURE:** Generic IMAP/SMTP Support
+  - [ ] Design UI for custom email server configuration
+  - [ ] Implement IMAP connection and authentication
+  - [ ] Add support for various authentication methods (OAuth2, password, app-specific)
+  - [ ] Support popular providers: Yahoo Mail, ProtonMail, Fastmail, etc.
+  - [ ] Create server configuration presets for common providers
+  - [ ] Implement secure password/credential storage
+
 #### Custom Verification Pages
 - [ ] **FUTURE:** Replace Clerk Account Portal with custom verification pages
 - [ ] **FUTURE:** Create proper /sign-up/verify route with full parameter handling
@@ -206,7 +219,24 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 
 *Note: Google OAuth is now working! Microsoft OAuth, Apple Sign-In, and social account linking can be added later for additional user experience improvements.*
 
-## 🚨 CRITICAL PRODUCTION ISSUE 🚨
+## 🚨 HIGH PRIORITY PRODUCTION TASKS 🚨
+
+### OAuth Production Setup (Required for Email Integration)
+**Priority**: HIGH - Complete before Phase 11
+1. **Configure Google OAuth for Production**
+   - Add `https://whatdidi.shop/api/auth/google/callback` to authorized redirect URIs in Google Cloud Console
+   - Keep localhost URI for development
+
+2. **Configure Microsoft OAuth for Production**
+   - Add `https://whatdidi.shop/api/auth/microsoft/callback` to redirect URIs in Azure Portal
+   - Keep localhost URI for development
+
+3. **Update Vercel Environment Variables**
+   - Set `GOOGLE_REDIRECT_URI=https://whatdidi.shop/api/auth/google/callback`
+   - Set `MICROSOFT_REDIRECT_URI=https://whatdidi.shop/api/auth/microsoft/callback`
+   - Set `TOKEN_ENCRYPTION_KEY` with a secure random value (use `openssl rand -base64 32`)
+
+### Previous Production Issue (If Still Relevant)
 **URGENT**: Production users getting "User not found" error when creating orders.
 - **Issue**: Authenticated users can't create orders on whatdidi.shop
 - **Cause**: Likely missing SUPABASE_SERVICE_ROLE_KEY in Vercel environment
@@ -214,7 +244,7 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - **Priority**: HIGH - Fix this before continuing development
 
 ## Current Status
-**Phase**: 8 - Order Management (Create) ✅ COMPLETED  
+**Phase**: 10 - Email Integration - OAuth ✅ COMPLETED  
 **Progress**: 
 - Foundation Setup ✅ COMPLETED
 - Authentication Setup ✅ COMPLETED (including beta access system + Google OAuth)
@@ -226,6 +256,8 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - Dashboard Layout ✅ COMPLETED (Navigation, Sidebar, Theme Toggle, Empty States)
 - Order Management - Read ✅ COMPLETED (API, List, Filters, Pagination, Security)
 - Order Management - Create ✅ COMPLETED (Form, Dialog, File Upload, API)
+- Order Details ✅ COMPLETED (Detail View, Edit, Navigation, Security)
+- Email Integration - OAuth ✅ COMPLETED (Google/Microsoft OAuth, Token Storage, UI)
 
 ## Recent Major Updates
 - **Order Management System**: Complete order viewing with pagination, search, and filtering
@@ -318,11 +350,90 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - Generic error messages
 
 **Next Steps:**
-- Phase 9: Order Details (view and edit individual orders)
+- Phase 10: Email Integration - OAuth (Google/Microsoft OAuth setup)
 - Add loading states for file uploads
 - Consider adding draft saving functionality
 
+### Phase 9: Order Details (Completed)
+**Implementation Summary:**
+- Successfully implemented complete order detail viewing and editing functionality
+- Added comprehensive order information display with responsive design
+- Created secure edit functionality with form validation
+- Implemented proper navigation between order list and details
+
+**Technical Achievements:**
+1. **API Development**: Created secure order detail endpoint with GET and PATCH operations
+2. **Server Queries**: Extended server queries with `getByIdWithItems` and `updateById` functions
+3. **UI Components**: Built comprehensive OrderDetail component with timeline, tracking info, and edit form
+4. **React Hooks**: Added `useOrder` and `useUpdateOrder` hooks for data management
+5. **Navigation**: Implemented click-to-navigate from order list to detail view
+6. **Edit Functionality**: Created OrderEditForm component with proper validation
+7. **Security Review**: Passed complete security checklist verification
+
+**Key Features:**
+- Detailed order view with summary, items, and metadata
+- Responsive design (desktop and mobile)
+- Order timeline showing status progression
+- Delivery tracking information display
+- Receipt viewing (if uploaded)
+- In-place editing for status, tracking, and delivery info
+- Proper error handling and loading states
+- Secure authorization ensuring users only see their own orders
+
+**Security Measures:**
+- Authentication check on all API routes
+- Input validation with Zod schemas (`orderIdSchema`, `orderUpdateSchema`)
+- Authorization filtering by user ID in database queries
+- Generic error messages to prevent information leakage
+- Proper use of server-only query functions
+
+**Navigation Flow:**
+- Orders list → Click order → Order detail page
+- Order detail → Back button → Orders list
+- Order detail → Edit mode → Save/Cancel functionality
+
+**Next Steps:**
+- Phase 11: Email Parsing - Core (email fetching and base parser)
+- Consider adding order history/audit trail
+- Add print functionality for order details
+
+### Phase 10: Email Integration - OAuth (Completed)
+**Implementation Summary:**
+- Successfully implemented complete OAuth integration for Gmail and Outlook
+- Created secure token storage with encryption
+- Built settings UI for email account management
+- Added all OAuth flow endpoints with proper security
+
+**Technical Achievements:**
+1. **OAuth Service**: Created providers for Google and Microsoft with token management
+2. **API Endpoints**: Built authorize and callback routes for both providers
+3. **Database Schema**: Set up email_accounts table with encrypted token storage
+4. **UI Components**: Created EmailAccountsList, ConnectEmailButton, and EmailAccountCard
+5. **Security**: Implemented CSRF protection, token encryption, and secure state handling
+6. **Error Handling**: Added comprehensive error messages and user feedback
+
+**Key Features:**
+- Google OAuth with Gmail API access
+- Microsoft OAuth with Mail.Read access  
+- Encrypted token storage in database
+- Token refresh capability
+- Email account management UI
+- Connect/disconnect functionality
+- Scan enable/disable per account
+
+**Security Measures:**
+- OAuth state parameter for CSRF protection
+- Encrypted access/refresh tokens
+- HttpOnly cookies for state storage
+- Authentication checks on all endpoints
+- Secure redirect URI validation
+
+**Next Steps:**
+- Phase 11: Email Parsing - Core (implement email fetching service)
+- Add token refresh job for expired tokens
+- Consider adding more email providers (iCloud, Yahoo)
+
 ---
 
-Last Updated: 2025-07-14
-Next Step: Phase 9 - Order Details
+Last Updated: 2025-07-15
+Next Step: Phase 11 - Email Parsing - Core

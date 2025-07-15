@@ -6,7 +6,10 @@ import type {
   Order,
   OrderInsert,
   OrderItem,
-  OrderItemInsert
+  OrderItemInsert,
+  EmailAccount,
+  EmailAccountInsert,
+  EmailAccountUpdate
 } from './types'
 
 // These queries are for server-side use only and use the service role key
@@ -123,6 +126,46 @@ export const serverOrderQueries = {
     }
   },
 
+  async getByIdWithItems(orderId: string, userId: string): Promise<(Order & { order_items: OrderItem[] }) | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('orders')
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .eq('id', orderId)
+      .eq('user_id', userId)
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
+  async updateById(orderId: string, userId: string, updates: Partial<OrderInsert>): Promise<Order | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
   async create(order: OrderInsert): Promise<Order | null> {
     const serverClient = createServerClient()
     const { data, error } = await serverClient
@@ -146,5 +189,133 @@ export const serverOrderItemQueries = {
     
     if (error) throw error
     return data || []
+  }
+}
+
+export const serverEmailAccountQueries = {
+  async create(account: EmailAccountInsert): Promise<EmailAccount | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .insert(account)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  async getByUserId(userId: string): Promise<EmailAccount[]> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  async getById(id: string, userId: string): Promise<EmailAccount | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
+  async updateTokens(
+    id: string, 
+    userId: string, 
+    tokens: { 
+      access_token: string, 
+      refresh_token?: string, 
+      token_expires_at?: string 
+    }
+  ): Promise<EmailAccount | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .update({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_expires_at: tokens.token_expires_at,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
+  async updateLastScan(id: string, userId: string): Promise<EmailAccount | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .update({
+        last_scan_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('user_id', userId)
+      .select()
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
+  async delete(id: string, userId: string): Promise<boolean> {
+    const serverClient = createServerClient()
+    const { error } = await serverClient
+      .from('email_accounts')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId)
+    
+    if (error) throw error
+    return true
+  },
+
+  async findByUserEmail(userId: string, email: string): Promise<EmailAccount | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('email_accounts')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('email', email)
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
   }
 }

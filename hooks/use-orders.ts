@@ -2,8 +2,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
-import type { Order } from '@/lib/supabase/types'
+import type { Order, OrderItem } from '@/lib/supabase/types'
 import type { CreateOrderInput } from '@/lib/validation/order-form'
+import type { OrderUpdateData } from '@/lib/validation/orders'
 import { toast } from 'sonner'
 
 interface OrdersResponse {
@@ -59,6 +60,64 @@ export function useOrders(options?: UseOrdersOptions) {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
+  })
+}
+
+export function useOrder(orderId: string) {
+  return useQuery<{ order: Order & { order_items: OrderItem[] } }>({
+    queryKey: ['order', orderId],
+    queryFn: async () => {
+      const response = await fetch(`/api/orders/${orderId}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Order not found')
+        }
+        throw new Error('Failed to fetch order')
+      }
+
+      return response.json()
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
+  })
+}
+
+export function useUpdateOrder(orderId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: OrderUpdateData) => {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to update order'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // If response is not JSON, use default error message
+        }
+        throw new Error(errorMessage)
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate both the specific order and orders list
+      queryClient.invalidateQueries({ queryKey: ['order', orderId] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      toast.success('Order updated successfully!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update order')
+    },
   })
 }
 
