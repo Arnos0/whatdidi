@@ -24,14 +24,6 @@ export default function OrdersPage() {
   const { data, isLoading, error, refetch } = useOrders()
   const createOrder = useCreateOrder()
 
-  // Sync user on mount
-  useEffect(() => {
-    fetch('/api/sync-user', { method: 'POST' })
-      .catch(() => {
-        // Silently handle sync errors
-      })
-  }, [])
-
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams)
     params.set('page', page.toString())

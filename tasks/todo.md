@@ -206,6 +206,13 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 
 *Note: Google OAuth is now working! Microsoft OAuth, Apple Sign-In, and social account linking can be added later for additional user experience improvements.*
 
+## 🚨 CRITICAL PRODUCTION ISSUE 🚨
+**URGENT**: Production users getting "User not found" error when creating orders.
+- **Issue**: Authenticated users can't create orders on whatdidi.shop
+- **Cause**: Likely missing SUPABASE_SERVICE_ROLE_KEY in Vercel environment
+- **Fix Guide**: See `/PRODUCTION_DEBUGGING_GUIDE.md` for step-by-step solution
+- **Priority**: HIGH - Fix this before continuing development
+
 ## Current Status
 **Phase**: 8 - Order Management (Create) ✅ COMPLETED  
 **Progress**: 
