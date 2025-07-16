@@ -1,0 +1,24 @@
+# CRITICAL REMINDERS FOR CLAUDE/AI ASSISTANTS
+
+## 🚨 PORT 3002 - NOT 3000! 🚨
+**THIS PROJECT RUNS ON PORT 3002**
+
+### Always use one of these commands:
+```bash
+./start-dev.sh              # Recommended - starts on port 3002
+PORT=3002 npm run dev       # Alternative
+```
+
+### Access the app at:
+**http://localhost:3002** (NOT localhost:3000)
+
+## Why port 3002?
+- Avoids conflicts with other local projects
+- Configured in claude.md
+- Required for proper development
+
+## Other Important Reminders:
+- Default AI service is now Gemini (not Claude)
+- Security is mandatory, not optional
+- Always read claude.md for project rules
+- Use TodoWrite tool for complex tasks

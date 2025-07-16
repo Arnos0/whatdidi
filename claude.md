@@ -1,5 +1,9 @@
 # WhatDidiShop - Development Documentation
 
+## 🚨 CRITICAL: THIS PROJECT RUNS ON PORT 3002 - NOT 3000! 🚨
+**ALWAYS USE: `./start-dev.sh` or `PORT=3002 npm run dev`**
+**ACCESS AT: http://localhost:3002**
+
 ## 🚨 PRIORITY: Migrate to Gemini 2.0 Flash (2025-07-16)
 
 We implemented AI email parsing with Claude but hit severe rate limits:

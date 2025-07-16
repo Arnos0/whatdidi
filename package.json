@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:3002": "PORT=3002 next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "_reminder": "⚠️ ALWAYS USE PORT 3002! Run: ./start-dev.sh or npm run dev:3002"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",
