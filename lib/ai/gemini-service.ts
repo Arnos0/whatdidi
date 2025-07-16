@@ -13,7 +13,7 @@ export class GeminiService {
     
     this.genAI = new GoogleGenerativeAI(apiKey)
     this.model = this.genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash-lite',
       generationConfig: {
         responseMimeType: 'application/json',
         temperature: 0.1 // Low temperature for consistent extraction

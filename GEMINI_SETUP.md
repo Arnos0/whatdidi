@@ -96,10 +96,11 @@ Don't forget to add `GOOGLE_AI_API_KEY` to your Vercel environment variables!
 4. Add `GOOGLE_AI_API_KEY` and `AI_SERVICE=gemini`
 5. Redeploy
 
-## Why Gemini 2.0 Flash?
+## Why Gemini 2.0 Flash Lite?
 
 - **Speed**: 10x faster processing means better UX
 - **Cost**: 40x cheaper means sustainable business model
 - **Reliability**: No rate limits means consistent performance
 - **Quality**: Comparable accuracy to Claude 3.5 Sonnet
+- **Efficiency**: Using the 'lite' variant for even better performance
 - **Future-proof**: Google's latest and most efficient model

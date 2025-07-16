@@ -9,7 +9,7 @@ After implementing Claude AI for email parsing, we encountered significant rate 
 - **High cost**: $0.003 per email ($0.81 for 270 emails)
 - **Poor UX**: Progress bar stuck at 0 for minutes
 
-### Gemini 2.0 Flash Benefits
+### Gemini 2.0 Flash Lite Benefits
 - **10x faster**: 200+ emails/minute (vs 30)
 - **40x cheaper**: $0.00007 per email (vs $0.003)
 - **No rate limits**: 4M tokens/minute, 4000 requests/minute
