@@ -324,6 +324,9 @@ async function processScanJob(
           let orderId: string | null = null
           let parseError: string | null = null
           
+          // Extract email metadata early
+          const { subject, from, date } = GmailService.extractContent(email)
+          
           const parsedOrder = aiResults.get(email.id)
           
           if (parsedOrder) {
@@ -473,7 +476,7 @@ async function processScanJob(
             }
 
           // Record processed email (should be outside the parsedOrder check)
-          const { subject, from, date } = GmailService.extractContent(email)
+          // (email metadata already extracted above)
           
           if (scanType === 'full') {
             // For full scan: Update existing record or insert new
