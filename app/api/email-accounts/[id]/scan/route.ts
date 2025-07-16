@@ -406,10 +406,20 @@ async function processScanJob(
 
                 if (!existingOrder) {
                   // Only create order if we have essential data
-                  if (!parsedOrder.order_number || !parsedOrder.amount || parsedOrder.amount <= 0) {
-                    console.log(`Skipping order creation - missing data: order_number=${parsedOrder.order_number}, amount=${parsedOrder.amount}`)
+                  // For Coolblue, be more lenient if we're missing order number
+                  const isCoolblue = parsedOrder.retailer.toLowerCase().includes('coolblue')
+                  if (!parsedOrder.amount || parsedOrder.amount <= 0) {
+                    console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount}`)
+                    parseError = 'Missing essential order data'
+                  } else if (!parsedOrder.order_number && !isCoolblue) {
+                    console.log(`Skipping order creation - missing order number for ${parsedOrder.retailer}`)
                     parseError = 'Missing essential order data'
                   } else {
+                    // Generate order number for Coolblue if missing
+                    if (!parsedOrder.order_number && isCoolblue) {
+                      parsedOrder.order_number = `COOLBLUE-${date.getTime()}`
+                      console.log(`Generated order number for Coolblue: ${parsedOrder.order_number}`)
+                    }
                     // Create new order
                     const { data: newOrder, error: orderError } = await supabase
                       .from('orders')

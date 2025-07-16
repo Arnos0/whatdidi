@@ -91,7 +91,10 @@ export async function GET(
         subject,
         from,
         date: date.toISOString(),
-        bodyPreview: body.substring(0, 200) + '...',
+        bodyLength: (htmlBody || textBody || '').length,
+        bodyPreview: body.substring(0, 500) + '...',
+        hasHtmlBody: !!htmlBody,
+        hasTextBody: !!textBody,
         classification: {
           retailer: classification.retailer,
           confidence: classification.confidence,

@@ -101,6 +101,12 @@ ${emailText.substring(0, 5000)}`  // Gemini can handle more content
       
       // Fix Gemini returning amount as string instead of number
       if (parsedResult.isOrder && parsedResult.orderData) {
+        // Log Coolblue responses for debugging
+        if (emailContent.from.toLowerCase().includes('coolblue')) {
+          console.log(`Gemini response for Coolblue email "${emailContent.subject}":`)
+          console.log(`  Raw orderData:`, JSON.stringify(parsedResult.orderData))
+        }
+        
         if (typeof parsedResult.orderData.amount === 'string') {
           parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount)
         }
