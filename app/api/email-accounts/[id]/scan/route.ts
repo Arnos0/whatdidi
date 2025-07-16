@@ -6,7 +6,11 @@ import { createServerClient } from '@/lib/supabase/server-client'
 import { GmailService } from '@/lib/email/gmail-service'
 import { AIEmailClassifier } from '@/lib/email/ai-parser'
 import { aiService } from '@/lib/ai/ai-service'
+import { registerParsers } from '@/lib/email/parsers'
 import type { DateRange, ScanType } from '@/lib/types/email'
+
+// Initialize parsers once
+registerParsers()
 
 const scanRequestSchema = z.object({
   dateRange: z.enum(['1_week', '2_weeks', '1_month', '3_months', '6_months']).default('2_weeks'),
@@ -234,20 +238,26 @@ async function processScanJob(
       
       // First, filter emails that need AI analysis
       const emailsToAnalyze: typeof emails = []
+      const emailsWithParsers: Array<{ email: typeof emails[0], parser: any }> = []
       const emailsToSkip: typeof emails = []
       const emailClassifications = new Map<string, any>()
       
       for (const email of emails) {
         const classification = AIEmailClassifier.classify(email)
         emailClassifications.set(email.id, classification)
-        if (classification.parser) {
+        
+        // Check if this email has a specific parser (like DHL)
+        if (classification.parser && classification.retailer && classification.retailer !== 'Pending AI Analysis') {
+          emailsWithParsers.push({ email, parser: classification.parser })
+          console.log(`Using specific parser for ${classification.retailer} email`)
+        } else if (classification.parser) {
           emailsToAnalyze.push(email)
         } else {
           emailsToSkip.push(email)
         }
       }
       
-      console.log(`Batch: ${emailsToAnalyze.length} emails for AI analysis, ${emailsToSkip.length} skipped`)
+      console.log(`Batch: ${emailsToAnalyze.length} emails for AI analysis, ${emailsWithParsers.length} with specific parsers, ${emailsToSkip.length} skipped`)
       
       // Log Coolblue emails specifically
       const coolblueEmails = emails.filter(email => {
@@ -263,6 +273,34 @@ async function processScanJob(
           console.log(`  - Classification: ${classification?.parser || 'none'}, retailer: ${classification?.retailer}`)
           console.log(`  - Will analyze with AI: ${emailsToAnalyze.includes(email)}`)
         })
+      }
+      
+      // Process emails with specific parsers first
+      const parserResults = new Map<string, any>()
+      for (const { email, parser } of emailsWithParsers) {
+        try {
+          const parsedOrder = await parser.parse(email)
+          if (parsedOrder) {
+            // Log what the parser returned
+            console.log(`Parser ${parser.getRetailerName()} returned:`, {
+              order_number: parsedOrder.order_number,
+              amount: parsedOrder.amount,
+              items: parsedOrder.items?.length || 0,
+              confidence: parsedOrder.confidence
+            })
+            
+            // Don't use results with invalid order numbers
+            if (parsedOrder.order_number === "0" || parsedOrder.order_number === 0 || !parsedOrder.order_number) {
+              console.log(`WARNING: Parser ${parser.getRetailerName()} returned invalid order number: "${parsedOrder.order_number}"`)
+              // Don't add to results, let AI handle it instead
+            } else {
+              parserResults.set(email.id, parsedOrder)
+              console.log(`Parser ${parser.getRetailerName()} found valid order: ${parsedOrder.order_number}`)
+            }
+          }
+        } catch (error) {
+          console.error(`Parser ${parser.getRetailerName()} failed:`, error)
+        }
       }
       
       // Process AI emails in smaller groups to avoid overwhelming the system
@@ -358,7 +396,8 @@ async function processScanJob(
           // Extract email metadata early
           const { subject, from, date } = GmailService.extractContent(email)
           
-          const parsedOrder = aiResults.get(email.id)
+          // Check parser results first, then AI results
+          const parsedOrder = parserResults.get(email.id) || aiResults.get(email.id)
           
           if (parsedOrder) {
             console.log(`AI found order: ${parsedOrder.retailer} - ${parsedOrder.order_number}`)
@@ -368,6 +407,7 @@ async function processScanJob(
                 
                 // For DHL tracking emails, try to find order by tracking number
                 if (parsedOrder.retailer === 'DHL Tracking' && parsedOrder.tracking_number) {
+                  // First try to find by tracking number
                   const { data } = await supabase
                     .from('orders')
                     .select('id')
@@ -376,12 +416,45 @@ async function processScanJob(
                     .single()
                   existingOrder = data
                   
-                  // If found, update the order status
+                  // If not found by tracking number, try to find recent orders without tracking
+                  if (!existingOrder) {
+                    const retailerName = parsedOrder.retailer.replace('DHL Tracking', '').trim()
+                    const { data: recentOrders } = await supabase
+                      .from('orders')
+                      .select('id, order_number, retailer')
+                      .eq('user_id', emailAccount.user_id)
+                      .is('tracking_number', null)
+                      .in('status', ['pending', 'processing', 'confirmed'])
+                      .gte('order_date', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()) // Last 2 weeks
+                      .order('order_date', { ascending: false })
+                      .limit(5)
+                    
+                    // Try to match by retailer name or find most recent untracked order
+                    if (recentOrders && recentOrders.length > 0) {
+                      // Check if DHL email mentions a specific retailer
+                      if (retailerName && retailerName !== 'DHL Tracking') {
+                        existingOrder = recentOrders.find(o => 
+                          o.retailer.toLowerCase().includes(retailerName.toLowerCase())
+                        ) || recentOrders[0]
+                      } else {
+                        // Use most recent order without tracking
+                        existingOrder = recentOrders[0]
+                      }
+                      
+                      if (existingOrder) {
+                        console.log(`Linking DHL tracking ${parsedOrder.tracking_number} to order ${existingOrder.order_number} from ${existingOrder.retailer}`)
+                      }
+                    }
+                  }
+                  
+                  // If found, update the order with tracking info and status
                   if (existingOrder) {
                     await supabase
                       .from('orders')
                       .update({
                         status: parsedOrder.status,
+                        tracking_number: parsedOrder.tracking_number,
+                        carrier: 'DHL',
                         estimated_delivery: parsedOrder.estimated_delivery,
                         updated_at: new Date().toISOString()
                       })
@@ -442,6 +515,22 @@ async function processScanJob(
                   // Only create order if we have essential data
                   // For Coolblue, be more lenient if we're missing order number
                   const isCoolblue = parsedOrder.retailer.toLowerCase().includes('coolblue')
+                  
+                  // Debug Coolblue order data
+                  if (isCoolblue) {
+                    console.log(`\nCoolblue order data before validation:`)
+                    console.log(`  order_number: "${parsedOrder.order_number}" (type: ${typeof parsedOrder.order_number})`)
+                    console.log(`  amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount})`)
+                    console.log(`  currency: ${parsedOrder.currency}`)
+                    console.log(`  items: ${parsedOrder.items?.length || 0} items`)
+                  }
+                  
+                  // Fix order number if it's "0" or invalid
+                  if (parsedOrder.order_number === "0" || parsedOrder.order_number === 0) {
+                    console.log(`WARNING: Order number is "0", setting to empty string`)
+                    parsedOrder.order_number = ""
+                  }
+                  
                   if (!parsedOrder.amount || parsedOrder.amount <= 0) {
                     console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount})`)
                     parseError = 'Missing essential order data'

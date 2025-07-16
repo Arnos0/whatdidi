@@ -70,7 +70,9 @@ export class DHLParser extends BaseEmailParser {
       const retailerPatterns = [
         /voor\s+(.+?)\s+(?:wordt|is)/i,  // "voor [retailer] wordt bezorgd"
         /namens\s+(.+?)\s+(?:wordt|is)/i, // "namens [retailer]"
-        /bestelling\s+(?:van|bij)\s+(.+?)(?:\.|,|\s+wordt)/i  // "bestelling van/bij [retailer]"
+        /bestelling\s+(?:van|bij)\s+(.+?)(?:\.|,|\s+wordt)/i,  // "bestelling van/bij [retailer]"
+        /pakket\s+van\s+(.+?)\s+/i,  // "pakket van [retailer]"
+        /afzender[:\s]+(.+?)(?:\.|,|\s|$)/i  // "afzender: [retailer]"
       ]
       
       for (const pattern of retailerPatterns) {

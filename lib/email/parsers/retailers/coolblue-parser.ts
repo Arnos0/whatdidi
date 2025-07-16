@@ -1,5 +1,7 @@
 import { BaseEmailParser } from '../base-parser'
 import type { GmailMessage, ParsedOrder } from '@/lib/types/email'
+import { parseEuropeanNumber, parseEuropeanDate } from '@/lib/ai/number-parser'
+import { CoolblueMultilingualParser } from '../retailer-parsers'
 
 export class CoolblueParser extends BaseEmailParser {
   getRetailerName(): string {
@@ -43,13 +45,28 @@ export class CoolblueParser extends BaseEmailParser {
       
       if (!body) return null
       
+      // Try the enhanced multilingual parser first
+      const multilingualParser = new CoolblueMultilingualParser()
+      
+      // Detect language from email content (simplified detection)
+      const language = this.detectLanguage(body)
+      
+      if (multilingualParser.canParse(email, language)) {
+        const result = await multilingualParser.parseByRetailer(body, 'coolblue', language)
+        if (result.order && result.confidence > 0.5) {
+          return result.order
+        }
+      }
+      
+      // Fallback to original parsing logic
       const order: ParsedOrder = {
         order_number: '',
         retailer: this.getRetailerName(),
         amount: 0,
         currency: 'EUR',
         order_date: date.toISOString(),
-        confidence: 0
+        confidence: 0,
+        language: language
       }
       
       // Extract order number - Coolblue uses various formats
@@ -59,6 +76,7 @@ export class CoolblueParser extends BaseEmailParser {
         /order[:\s]+#?([A-Z0-9]+)/i,
         /nummer[:\s]+([A-Z0-9]+)/i,
         /order[:\s]+([0-9]{6,10})/i,  // Coolblue uses 6-10 digit numbers
+        /bestelling\s*\((\d+)\)/i,    // Matches "Je bestelling (90276634)"
         /\b([0-9]{8})\b/  // Often just 8 digits in the email
       ]
       
@@ -70,8 +88,8 @@ export class CoolblueParser extends BaseEmailParser {
         }
       }
       
-      // Extract amount - Dutch format with € symbol
-      const amount = this.extractAmount(body)
+      // Extract amount using European number parser
+      const amount = this.extractAmountEnhanced(body, language)
       if (amount) {
         order.amount = amount
       }
@@ -132,8 +150,9 @@ export class CoolblueParser extends BaseEmailParser {
       for (const pattern of itemPatterns) {
         let itemMatch
         while ((itemMatch = pattern.exec(body)) !== null) {
-          const name = (pattern.source.startsWith('€') ? itemMatch[2] : itemMatch[1]).trim()
+          const name = (pattern.source.startsWith('€') ? itemMatch[2] : itemMatch[1])?.trim()
           const priceStr = pattern.source.startsWith('€') ? itemMatch[1] : itemMatch[2]
+          if (!name || !priceStr) continue
           const price = parseFloat(priceStr.replace('.', '').replace(',', '.'))
           
           if (name.length > 5 && name.length < 200 && !name.toLowerCase().includes('totaal') && !name.toLowerCase().includes('verzend')) {
@@ -175,5 +194,46 @@ export class CoolblueParser extends BaseEmailParser {
       console.error('Error parsing Coolblue email:', error)
       return null
     }
+  }
+  
+  /**
+   * Enhanced amount extraction using European number parser
+   */
+  private extractAmountEnhanced(text: string, language: string): number | null {
+    const patterns = [
+      /totaal[:\s]*€?\s*([\d.,]+)/i,
+      /bedrag[:\s]*€?\s*([\d.,]+)/i,
+      /prijs[:\s]*€?\s*([\d.,]+)/i,
+      /€\s*([\d.,]+)/i,
+      /([\d.,]+)\s*€/i
+    ]
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern)
+      if (match) {
+        const amount = parseEuropeanNumber(match[1], language)
+        if (amount > 0) {
+          return amount
+        }
+      }
+    }
+    
+    return null
+  }
+  
+  /**
+   * Simple language detection based on common Dutch words
+   */
+  private detectLanguage(text: string): string {
+    const dutchWords = ['bestelling', 'bezorging', 'verzonden', 'geleverd', 'bedankt', 'je', 'uw']
+    const textLower = text.toLowerCase()
+    
+    const dutchMatches = dutchWords.filter(word => textLower.includes(word)).length
+    
+    if (dutchMatches >= 2) {
+      return 'nl'
+    }
+    
+    return 'en' // Default to English
   }
 }

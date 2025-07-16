@@ -45,6 +45,7 @@ export interface ProcessedEmail {
   order_created: boolean
   order_id: string | null
   parse_error: string | null
+  detected_language: string | null
   processed_at: string
   created_at: string
 }
@@ -92,6 +93,7 @@ export interface ParsedOrder {
     price: number
   }>
   confidence: number // 0-1 score indicating parsing confidence
+  language?: string // ISO 639-1 language code (nl, de, fr, en)
 }
 
 export interface EmailParser {

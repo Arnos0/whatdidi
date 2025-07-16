@@ -1,5 +1,8 @@
 import 'server-only'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { buildMultilingualPrompt, buildIncrementalPrompt } from './prompt-builder'
+import { detectEmailLanguage } from '@/lib/email/utils/language-detector'
+import { parseEuropeanNumber } from './number-parser'
 
 export class GeminiService {
   private genAI: GoogleGenerativeAI
@@ -30,7 +33,7 @@ export class GeminiService {
     from: string
     date: Date
     body: string
-  }): Promise<{
+  }, detectedLanguage?: string): Promise<{
     isOrder: boolean
     orderData?: {
       orderNumber: string | null
@@ -64,31 +67,17 @@ Date: ${emailContent.date.toISOString()}
 ${emailContent.body}
 `
       
-      // Create a more specific prompt for better extraction
-      const prompt = `Analyze this email. If it's an order (purchase confirmation/shipping/delivery), extract:
-- orderNumber (look for: bestelnummer, ordernummer, order number, order #)
-- retailer (from sender email domain or company name)
-- amount & currency (look for: totaal, total, bedrag, EUR, €)
-- orderDate (ISO format)
-- status (confirmed/shipped/delivered)
-- estimatedDelivery (look for: bezorging, levering, delivery)
-- trackingNumber & carrier (if present)
-- items array with name, quantity, price (if detailed)
-- confidence (0-1)
-
-IMPORTANT for Dutch emails:
-- "bestelnummer" = order number (may also be in subject after colon)
-- "totaal" or "totaalbedrag" = total amount
-- "bezorging" or "levering" = delivery
-- Currency is usually EUR (€)
-- For Coolblue: look for price after "€" symbol
-- If you can't find exact order details, look harder in the email body
-
-Return ONLY valid JSON:
-{"isOrder": true/false, "orderData": {...}, "debugInfo": {"language": "xx", "emailType": "..."}}
-
-Email:
-${emailText.substring(0, 8000)}`  // Increased to capture more order details
+      // Detect language if not provided
+      const senderDomain = emailContent.from.match(/@([^>]+)/)?.[1]
+      const language = detectedLanguage || detectEmailLanguage(emailText, senderDomain)
+      
+      // Build dynamic multilingual prompt
+      const prompt = buildMultilingualPrompt({
+        language,
+        emailText,
+        maxLength: 10000, // Increased from 8000
+        includeExamples: true
+      })
 
       const result = await this.model.generateContent(prompt)
       const response = result.response
@@ -116,9 +105,9 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         }
         
         if (typeof parsedResult.orderData.amount === 'string') {
-          // Handle Dutch number format (comma as decimal separator)
+          // Handle European number formats (multilingual)
           console.log(`Converting amount from string: "${parsedResult.orderData.amount}" to number`)
-          parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount.replace(',', '.'))
+          parsedResult.orderData.amount = parseEuropeanNumber(parsedResult.orderData.amount, language)
           console.log(`Converted amount: ${parsedResult.orderData.amount}`)
         }
         
@@ -126,7 +115,7 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         if (parsedResult.orderData.items && Array.isArray(parsedResult.orderData.items)) {
           parsedResult.orderData.items = parsedResult.orderData.items.map((item: any) => ({
             ...item,
-            price: typeof item.price === 'string' ? parseFloat(item.price.replace(',', '.')) : item.price
+            price: typeof item.price === 'string' ? parseEuropeanNumber(item.price, language) : item.price
           }))
         }
         
@@ -138,7 +127,10 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         // For Coolblue, if order number is missing, try to extract from subject
         if (!parsedResult.orderData.orderNumber && parsedResult.orderData.retailer?.toLowerCase().includes('coolblue')) {
           // Try to find order number in subject or body
-          const orderMatch = emailContent.subject.match(/\d{6,}/) || emailContent.body.match(/bestelnummer[:\s]+(\d+)/i);
+          const subjectMatch = emailContent.subject.match(/\((\d{6,})\)/) || emailContent.subject.match(/\d{6,}/);
+          const bodyMatch = emailContent.body.match(/bestelling\s*\((\d+)\)/i) || emailContent.body.match(/bestelnummer[:\s]+(\d+)/i);
+          const orderMatch = subjectMatch || bodyMatch;
+          
           if (orderMatch) {
             parsedResult.orderData.orderNumber = orderMatch[1] || orderMatch[0];
             console.log(`Extracted Coolblue order number from pattern: ${parsedResult.orderData.orderNumber}`);
@@ -146,10 +138,54 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         }
       }
       
+      // Ensure language is in debug info
+      if (parsedResult.debugInfo) {
+        parsedResult.debugInfo.language = language
+      } else {
+        parsedResult.debugInfo = { language, emailType: 'unknown' }
+      }
+
+      // Try incremental prompting for low confidence orders
+      if (parsedResult.isOrder && parsedResult.orderData && parsedResult.orderData.confidence < 0.7) {
+        console.log(`Low confidence (${parsedResult.orderData.confidence}), trying incremental prompting...`)
+        
+        // Identify missing or uncertain fields
+        const missingFields = []
+        if (!parsedResult.orderData.orderNumber) missingFields.push('orderNumber')
+        if (!parsedResult.orderData.amount || parsedResult.orderData.amount === 0) missingFields.push('amount')
+        if (!parsedResult.orderData.estimatedDelivery) missingFields.push('estimatedDelivery')
+        
+        if (missingFields.length > 0) {
+          try {
+            const incrementalPrompt = buildIncrementalPrompt({
+              language,
+              emailText,
+              missingFields,
+              context: `Previous analysis found: ${JSON.stringify(parsedResult.orderData)}`
+            })
+            
+            const incrementalResult = await this.model.generateContent(incrementalPrompt)
+            const incrementalResponse = incrementalResult.response
+            const incrementalText = incrementalResponse.text()
+            const incrementalParsed = JSON.parse(incrementalText)
+            
+            // Merge results
+            if (incrementalParsed.missingFields) {
+              Object.assign(parsedResult.orderData, incrementalParsed.missingFields)
+              parsedResult.orderData.confidence = Math.min(1.0, parsedResult.orderData.confidence + 0.2)
+              console.log(`Incremental prompting improved confidence to ${parsedResult.orderData.confidence}`)
+            }
+          } catch (error) {
+            console.error('Incremental prompting failed:', error)
+          }
+        }
+      }
+
       // Log for debugging
       console.log('Gemini analysis result:', {
         from: emailContent.from,
         subject: emailContent.subject,
+        language,
         isOrder: parsedResult.isOrder,
         retailer: parsedResult.orderData?.retailer,
         confidence: parsedResult.orderData?.confidence
@@ -206,12 +242,16 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
       // Process batch in parallel - Gemini can handle it
       const batchPromises = batch.map(async (email) => {
         try {
+          // Detect language for each email in batch
+          const senderDomain = email.from.match(/@([^>]+)/)?.[1]
+          const detectedLanguage = detectEmailLanguage(`${email.subject} ${email.body}`, senderDomain)
+          
           const result = await this.analyzeEmail({
             subject: email.subject,
             from: email.from,
             date: email.date,
             body: email.body.substring(0, 10000) // Gemini can handle more content
-          })
+          }, detectedLanguage)
           return { id: email.id, result }
         } catch (error: any) {
           console.error(`Failed to analyze email ${email.id}:`, error.message)

@@ -1,4 +1,8 @@
-# WhatDidiShop Development Plan
+# WhatDidiShop Development Plan - ORIGINAL VERSION
+
+> **⚠️ ARCHIVED**: This is the original development plan before multilingual support was added.  
+> **📋 CURRENT PLAN**: See `/todo.md` for the updated plan with multilingual phases.  
+> **📅 ARCHIVED**: 2025-01-16
 
 ## Overview
 This document tracks the development progress of WhatDidiShop, a purchase tracking web application. Each task is designed to be simple and incremental, following the principle of making minimal changes at each step.

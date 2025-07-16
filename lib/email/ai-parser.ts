@@ -1,6 +1,9 @@
 import type { GmailMessage, ParsedOrder, EmailParser } from '@/lib/types/email'
 import { GmailService } from '@/lib/email/gmail-service'
 import { aiService, shouldAnalyzeEmail } from '@/lib/ai/ai-service'
+import { detectEmailLanguage } from './utils/language-detector'
+import { LANGUAGE_PATTERNS, UNIVERSAL_REJECT_PATTERNS } from './utils/multilingual-patterns'
+import { ParserRegistry } from './parsers/parser-registry'
 
 /**
  * Universal AI-powered email parser
@@ -166,31 +169,103 @@ export class AIEmailParser implements EmailParser {
  */
 export const aiEmailParser = new AIEmailParser()
 
+export interface ClassificationResult {
+  isPotentialOrder: boolean
+  confidence: number
+  language: string
+  retailer: string | null
+  parser: EmailParser | null
+  debugInfo?: {
+    detectedLanguage: string
+    patterns: string[]
+    rejectPatterns: string[]
+  }
+}
+
 /**
- * Replace the parser registry with a simple AI-based classifier
+ * Multilingual AI-based email classifier
  */
 export class AIEmailClassifier {
   /**
-   * Classify an email and get the AI parser if it's an order
+   * Classify an email with language detection and multilingual patterns
    */
-  static classify(email: GmailMessage): {
-    retailer: string | null
-    confidence: number
-    parser: EmailParser | null
-  } {
-    // Check if AI parser can handle this email
-    if (aiEmailParser.canParse(email)) {
+  static classify(email: GmailMessage): ClassificationResult {
+    const { subject, from, htmlBody, textBody } = GmailService.extractContent(email)
+    const body = textBody || htmlBody || ''
+    const emailText = `${subject} ${body}`.substring(0, 2000)
+    
+    // First, check if any specific parser can handle this email
+    const parser = ParserRegistry.findParser(email)
+    if (parser) {
+      console.log(`Parser found for email: ${parser.getRetailerName()}`)
       return {
-        retailer: 'Pending AI Analysis',
-        confidence: 0.8, // High confidence in AI's ability
-        parser: aiEmailParser
+        isPotentialOrder: true,
+        confidence: 0.9,
+        language: 'en', // Parser will handle language detection
+        retailer: parser.getRetailerName(),
+        parser: parser,
+        debugInfo: {
+          detectedLanguage: 'en',
+          patterns: [`${parser.getRetailerName()} parser match`],
+          rejectPatterns: []
+        }
       }
     }
     
+    // Extract sender domain for language override
+    const senderDomain = from.match(/@([^>]+)/)?.[1]
+    
+    // Detect language
+    const language = detectEmailLanguage(emailText, senderDomain)
+    const patterns = LANGUAGE_PATTERNS[language] || LANGUAGE_PATTERNS['en']
+    
+    // Build combined reject patterns
+    const allRejectPatterns = [
+      ...patterns.reject,
+      ...UNIVERSAL_REJECT_PATTERNS
+    ]
+    
+    // Check reject patterns
+    const lowerEmailText = emailText.toLowerCase()
+    const foundRejectPatterns = allRejectPatterns.filter(pattern => 
+      lowerEmailText.includes(pattern.toLowerCase())
+    )
+    
+    if (foundRejectPatterns.length > 0) {
+      return {
+        isPotentialOrder: false,
+        confidence: 1.0,
+        language,
+        retailer: null,
+        parser: null,
+        debugInfo: {
+          detectedLanguage: language,
+          patterns: [],
+          rejectPatterns: foundRejectPatterns
+        }
+      }
+    }
+    
+    // Check retail patterns
+    const foundRetailPatterns = patterns.retail.filter(pattern =>
+      lowerEmailText.includes(pattern.toLowerCase())
+    )
+    
+    // Calculate confidence based on pattern matches
+    const confidence = Math.min(1.0, foundRetailPatterns.length * 0.25)
+    const isPotentialOrder = foundRetailPatterns.length > 0
+    
     return {
-      retailer: null,
-      confidence: 0,
-      parser: null
+      isPotentialOrder,
+      confidence,
+      language,
+      retailer: isPotentialOrder ? 'Pending AI Analysis' : null,
+      parser: isPotentialOrder ? aiEmailParser : null,
+      debugInfo: {
+        detectedLanguage: language,
+        patterns: foundRetailPatterns,
+        rejectPatterns: []
+      }
     }
   }
 }
