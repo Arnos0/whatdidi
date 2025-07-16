@@ -77,10 +77,12 @@ ${emailContent.body}
 - confidence (0-1)
 
 IMPORTANT for Dutch emails:
-- "bestelnummer" = order number
+- "bestelnummer" = order number (may also be in subject after colon)
 - "totaal" or "totaalbedrag" = total amount
 - "bezorging" or "levering" = delivery
 - Currency is usually EUR (€)
+- For Coolblue: look for price after "€" symbol
+- If you can't find exact order details, look harder in the email body
 
 Return ONLY valid JSON:
 {"isOrder": true/false, "orderData": {...}, "debugInfo": {"language": "xx", "emailType": "..."}}
@@ -115,7 +117,9 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         
         if (typeof parsedResult.orderData.amount === 'string') {
           // Handle Dutch number format (comma as decimal separator)
+          console.log(`Converting amount from string: "${parsedResult.orderData.amount}" to number`)
           parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount.replace(',', '.'))
+          console.log(`Converted amount: ${parsedResult.orderData.amount}`)
         }
         
         // Also fix item prices if they're strings
@@ -150,6 +154,14 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         retailer: parsedResult.orderData?.retailer,
         confidence: parsedResult.orderData?.confidence
       })
+      
+      // Extra logging for Coolblue debugging
+      if (emailContent.from.toLowerCase().includes('coolblue') && parsedResult.isOrder) {
+        console.log('Coolblue order details from Gemini:')
+        console.log(`  - orderNumber: ${parsedResult.orderData?.orderNumber} (type: ${typeof parsedResult.orderData?.orderNumber})`)
+        console.log(`  - amount: ${parsedResult.orderData?.amount} (type: ${typeof parsedResult.orderData?.amount})`)
+        console.log(`  - Body preview (first 500 chars):`, emailContent.body.substring(0, 500))
+      }
       
       return parsedResult
       

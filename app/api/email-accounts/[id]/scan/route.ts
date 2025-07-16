@@ -274,12 +274,30 @@ async function processScanJob(
           // Prepare emails for batch analysis
           const emailsForAI = emailsToAnalyze.map(email => {
             const { subject, from, date, htmlBody, textBody } = GmailService.extractContent(email)
+            
+            // Prioritize plain text over HTML for cleaner content
+            let body = textBody || htmlBody || ''
+            
+            // Log Coolblue email content for debugging
+            if (from.toLowerCase().includes('coolblue')) {
+              console.log(`\n=== COOLBLUE EMAIL DEBUG ===`)
+              console.log(`Subject: "${subject}"`)
+              console.log(`From: ${from}`)
+              console.log(`Has textBody: ${!!textBody} (${textBody.length} chars)`)
+              console.log(`Has htmlBody: ${!!htmlBody} (${htmlBody.length} chars)`)
+              if (textBody) {
+                console.log(`Plain text preview (first 1000 chars):`)
+                console.log(textBody.substring(0, 1000))
+                console.log(`\n--- END PREVIEW ---\n`)
+              }
+            }
+            
             return {
               id: email.id,
               subject,
               from,
               date,
-              body: (htmlBody || textBody || '').substring(0, 5000) // Reduced to 5000 chars
+              body: body.substring(0, 10000) // Increased to 10000 chars for better order extraction
             }
           })
           
@@ -301,8 +319,21 @@ async function processScanJob(
             }
             
             if (result && result.isOrder && result.orderData) {
+              // Map camelCase properties from AI to snake_case for database
+              // Also map 'confirmed' status to 'pending' as database doesn't allow 'confirmed'
+              const mappedStatus = result.orderData.status === 'confirmed' ? 'pending' : result.orderData.status
+              
               aiResults.set(email.id, {
-                ...result.orderData,
+                order_number: result.orderData.orderNumber,
+                retailer: result.orderData.retailer,
+                amount: result.orderData.amount,
+                currency: result.orderData.currency,
+                order_date: result.orderData.orderDate,
+                status: mappedStatus || 'pending',
+                estimated_delivery: result.orderData.estimatedDelivery,
+                tracking_number: result.orderData.trackingNumber,
+                carrier: result.orderData.carrier,
+                items: result.orderData.items,
                 confidence: result.orderData.confidence || 0.5
               })
             }
@@ -412,10 +443,12 @@ async function processScanJob(
                   // For Coolblue, be more lenient if we're missing order number
                   const isCoolblue = parsedOrder.retailer.toLowerCase().includes('coolblue')
                   if (!parsedOrder.amount || parsedOrder.amount <= 0) {
-                    console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount}`)
+                    console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount})`)
+                    console.log(`Full order data:`, JSON.stringify(parsedOrder))
                     parseError = 'Missing essential order data'
                   } else if (!parsedOrder.order_number && !isCoolblue) {
                     console.log(`Skipping order creation - missing order number for ${parsedOrder.retailer}`)
+                    console.log(`Full order data:`, JSON.stringify(parsedOrder))
                     parseError = 'Missing essential order data'
                   } else {
                     // Generate order number for Coolblue if missing

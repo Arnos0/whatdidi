@@ -4,6 +4,17 @@
 **ALWAYS USE: `./start-dev.sh` or `PORT=3002 npm run dev`**
 **ACCESS AT: http://localhost:3002**
 
+## 📧 EMAIL PARSING SYSTEM
+**IMPORTANT**: For detailed information about the email parsing system, AI integration, and debugging, see:
+→ **[EMAIL_PARSING_SYSTEM.md](./EMAIL_PARSING_SYSTEM.md)**
+
+This includes:
+- Gmail integration details
+- AI prompt engineering with Gemini
+- Coolblue parsing issues and solutions
+- Debugging strategies
+- Future improvements
+
 ## 🚨 PRIORITY: Migrate to Gemini 2.0 Flash (2025-07-16)
 
 We implemented AI email parsing with Claude but hit severe rate limits:

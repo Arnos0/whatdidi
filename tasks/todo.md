@@ -243,6 +243,17 @@ This document tracks the development progress of WhatDidiShop, a purchase tracki
 - **Fix Guide**: See `/PRODUCTION_DEBUGGING_GUIDE.md` for step-by-step solution
 - **Priority**: HIGH - Fix this before continuing development
 
+## 📧 EMAIL PARSING SYSTEM DOCUMENTATION
+**IMPORTANT**: When working on email parsing features, always consult:
+→ **[EMAIL_PARSING_SYSTEM.md](../EMAIL_PARSING_SYSTEM.md)**
+
+This comprehensive guide includes:
+- Gmail integration implementation details
+- AI integration with Gemini (migrated from Claude)
+- Detailed debugging strategies for retailer-specific issues
+- Current challenges and solutions (especially Coolblue)
+- Future improvement suggestions
+
 ## Current Status
 **Phase**: 11 - Email Parsing - Core ✅ COMPLETED  
 **Progress**: 

@@ -254,6 +254,52 @@ export class GmailService {
   }
 
   /**
+   * Decode quoted-printable encoding
+   */
+  private static decodeQuotedPrintable(str: string): string {
+    // First handle soft line breaks (=\r\n or =\n)
+    let decoded = str.replace(/=\r?\n/g, '')
+    
+    // Common quoted-printable sequences
+    const replacements: Record<string, string> = {
+      '=3D': '=',
+      '=2C': ',',
+      '=2E': '.',
+      '=20': ' ',
+      '=C2=A0': ' ', // Non-breaking space
+      '=E2=82=AC': '€', // Euro symbol
+      '=C3=A9': 'é',
+      '=C3=A8': 'è',
+      '=C3=AB': 'ë',
+      '=C3=A1': 'á',
+      '=C3=A0': 'à',
+      '=C3=B3': 'ó',
+      '=C3=B2': 'ò',
+      '=C3=B6': 'ö',
+      '=C3=BA': 'ú',
+      '=C3=B9': 'ù',
+      '=C3=BC': 'ü',
+      '=C3=AF': 'ï',
+      '=C3=A2': 'â',
+      '=C3=AA': 'ê',
+      '=C3=B4': 'ô',
+      '=C3=BB': 'û'
+    }
+    
+    // Apply common replacements
+    for (const [encoded, decodedChar] of Object.entries(replacements)) {
+      decoded = decoded.replace(new RegExp(encoded.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), decodedChar)
+    }
+    
+    // Then handle remaining =XX sequences
+    decoded = decoded.replace(/=([0-9A-F]{2})/gi, (match, hex) => {
+      return String.fromCharCode(parseInt(hex, 16))
+    })
+    
+    return decoded
+  }
+
+  /**
    * Extract email content from Gmail message
    */
   static extractContent(message: GmailMessage): {
@@ -276,10 +322,24 @@ export class GmailService {
     
     // Extract body content
     const extractPart = (part: any) => {
+      // Check for content transfer encoding
+      const headers = part.headers || []
+      const encoding = headers.find((h: any) => h.name?.toLowerCase() === 'content-transfer-encoding')?.value?.toLowerCase()
+      
       if (part.mimeType === 'text/html' && part.body?.data) {
-        htmlBody = Buffer.from(part.body.data, 'base64').toString('utf-8')
+        let content = Buffer.from(part.body.data, 'base64').toString('utf-8')
+        // Decode quoted-printable if needed
+        if (encoding === 'quoted-printable') {
+          content = GmailService.decodeQuotedPrintable(content)
+        }
+        htmlBody = content
       } else if (part.mimeType === 'text/plain' && part.body?.data) {
-        textBody = Buffer.from(part.body.data, 'base64').toString('utf-8')
+        let content = Buffer.from(part.body.data, 'base64').toString('utf-8')
+        // Decode quoted-printable if needed
+        if (encoding === 'quoted-printable') {
+          content = GmailService.decodeQuotedPrintable(content)
+        }
+        textBody = content
       } else if (part.filename) {
         attachments.push({
           filename: part.filename,
