@@ -314,7 +314,7 @@ async function processScanJob(
               console.log(`Coolblue AI result for "${subject}":`)
               console.log(`  - isOrder: ${result?.isOrder}, confidence: ${result?.orderData?.confidence}`)
               if (result?.orderData) {
-                console.log(`  - Order data:`, JSON.stringify(result.orderData, null, 2))
+                console.log(`  - Order: ${result.orderData.retailer} ${result.orderData.currency} ${result.orderData.amount}`)
               }
             }
             
@@ -444,11 +444,9 @@ async function processScanJob(
                   const isCoolblue = parsedOrder.retailer.toLowerCase().includes('coolblue')
                   if (!parsedOrder.amount || parsedOrder.amount <= 0) {
                     console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount})`)
-                    console.log(`Full order data:`, JSON.stringify(parsedOrder))
                     parseError = 'Missing essential order data'
                   } else if (!parsedOrder.order_number && !isCoolblue) {
                     console.log(`Skipping order creation - missing order number for ${parsedOrder.retailer}`)
-                    console.log(`Full order data:`, JSON.stringify(parsedOrder))
                     parseError = 'Missing essential order data'
                   } else {
                     // Generate order number for Coolblue if missing
@@ -484,16 +482,39 @@ async function processScanJob(
 
                       // Create order items if available
                       if (parsedOrder.items && parsedOrder.items.length > 0) {
-                        await supabase
-                          .from('order_items')
-                          .insert(
-                            parsedOrder.items.map((item: any) => ({
-                              order_id: newOrder.id,
-                              name: item.name,
-                              quantity: item.quantity,
-                              price: item.price
-                            }))
+                        // Validate and sanitize order items data
+                        const validatedItems = parsedOrder.items
+                          .filter((item: any) => 
+                            item.name && 
+                            typeof item.name === 'string' && 
+                            item.name.trim().length > 0 && 
+                            item.name.length <= 500 && // Prevent excessively long descriptions
+                            typeof item.quantity === 'number' && 
+                            item.quantity > 0 && 
+                            item.quantity <= 1000 && // Reasonable quantity limit
+                            typeof item.price === 'number' && 
+                            item.price >= 0 && 
+                            item.price <= 1000000 // Reasonable price limit
                           )
+                          .slice(0, 50) // Limit to max 50 items per order
+                          .map((item: any) => ({
+                            order_id: newOrder.id,
+                            description: item.name.trim().substring(0, 500), // Truncate if too long
+                            quantity: Math.floor(item.quantity), // Ensure integer
+                            price: Math.round(item.price * 100) / 100 // Round to 2 decimal places
+                          }))
+                        
+                        if (validatedItems.length > 0) {
+                          const { error: itemsError } = await supabase
+                            .from('order_items')
+                            .insert(validatedItems)
+                          
+                          if (itemsError) {
+                            console.error('Failed to create order items:', itemsError)
+                          } else {
+                            console.log(`Created ${validatedItems.length} items for order ${newOrder.id}`)
+                          }
+                        }
                       }
                     } else if (orderError) {
                       console.error('Failed to create order:', orderError)
