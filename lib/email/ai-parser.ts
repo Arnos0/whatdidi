@@ -8,10 +8,8 @@ import { ClaudeService, claudeService } from '@/lib/ai/claude-service'
  * Handles all languages and retailers without custom code
  */
 export class AIEmailParser implements EmailParser {
-  private claudeService: ClaudeService
-  
   constructor() {
-    this.claudeService = claudeService
+    // No need to store claudeService, we'll use it directly
   }
   
   /**
@@ -54,7 +52,7 @@ export class AIEmailParser implements EmailParser {
       }
       
       // Analyze with Claude
-      const result = await this.claudeService.analyzeEmail({
+      const result = await claudeService.analyzeEmail({
         subject,
         from,
         date,

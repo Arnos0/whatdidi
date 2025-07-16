@@ -5,7 +5,7 @@ import { serverUserQueries, serverEmailAccountQueries } from '@/lib/supabase/ser
 import { createServerClient } from '@/lib/supabase/server-client'
 import { GmailService } from '@/lib/email/gmail-service'
 import { AIEmailClassifier } from '@/lib/email/ai-parser'
-import { ClaudeService, claudeService } from '@/lib/ai/claude-service'
+import { claudeService } from '@/lib/ai/claude-service'
 import type { DateRange, ScanType } from '@/lib/types/email'
 
 const scanRequestSchema = z.object({
@@ -226,9 +226,11 @@ async function processScanJob(
       // First, filter emails that need AI analysis
       const emailsToAnalyze: typeof emails = []
       const emailsToSkip: typeof emails = []
+      const emailClassifications = new Map<string, any>()
       
       for (const email of emails) {
         const classification = AIEmailClassifier.classify(email)
+        emailClassifications.set(email.id, classification)
         if (classification.parser) {
           emailsToAnalyze.push(email)
         } else {
@@ -403,7 +405,7 @@ async function processScanJob(
                         await supabase
                           .from('order_items')
                           .insert(
-                            parsedOrder.items.map(item => ({
+                            parsedOrder.items.map((item: any) => ({
                               order_id: newOrder.id,
                               name: item.name,
                               quantity: item.quantity,
@@ -438,7 +440,7 @@ async function processScanJob(
                 email_date: date.toISOString(),
                 subject,
                 sender: from,
-                retailer_detected: classification.retailer,
+                retailer_detected: emailClassifications.get(email.id)?.retailer,
                 order_created: !!orderId,
                 order_id: orderId,
                 parse_error: parseError,
@@ -457,7 +459,7 @@ async function processScanJob(
                 email_date: date.toISOString(),
                 subject,
                 sender: from,
-                retailer_detected: classification.retailer,
+                retailer_detected: emailClassifications.get(email.id)?.retailer,
                 order_created: !!orderId,
                 order_id: orderId,
                 parse_error: parseError

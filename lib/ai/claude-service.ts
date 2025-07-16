@@ -289,5 +289,21 @@ ${emailText.substring(0, 3000)}`
   }
 }
 
-// Export a singleton instance
-export const claudeService = new ClaudeService()
+// Lazy initialization to prevent build-time failures
+let _claudeService: ClaudeService | null = null
+
+export const claudeService = {
+  analyzeEmail: async (...args: Parameters<ClaudeService['analyzeEmail']>) => {
+    if (!_claudeService) {
+      _claudeService = new ClaudeService()
+    }
+    return _claudeService.analyzeEmail(...args)
+  },
+  
+  batchAnalyzeEmails: async (...args: Parameters<ClaudeService['batchAnalyzeEmails']>) => {
+    if (!_claudeService) {
+      _claudeService = new ClaudeService()
+    }
+    return _claudeService.batchAnalyzeEmails(...args)
+  }
+}
