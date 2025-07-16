@@ -64,23 +64,29 @@ Date: ${emailContent.date.toISOString()}
 ${emailContent.body}
 `
       
-      // Create a concise prompt to reduce token usage
+      // Create a more specific prompt for better extraction
       const prompt = `Analyze this email. If it's an order (purchase confirmation/shipping/delivery), extract:
-- orderNumber
-- retailer  
-- amount & currency
-- orderDate (ISO)
+- orderNumber (look for: bestelnummer, ordernummer, order number, order #)
+- retailer (from sender email domain or company name)
+- amount & currency (look for: totaal, total, bedrag, EUR, €)
+- orderDate (ISO format)
 - status (confirmed/shipped/delivered)
-- estimatedDelivery (ISO or null)
+- estimatedDelivery (look for: bezorging, levering, delivery)
 - trackingNumber & carrier (if present)
-- items array (if detailed)
+- items array with name, quantity, price (if detailed)
 - confidence (0-1)
 
-Return JSON:
+IMPORTANT for Dutch emails:
+- "bestelnummer" = order number
+- "totaal" or "totaalbedrag" = total amount
+- "bezorging" or "levering" = delivery
+- Currency is usually EUR (€)
+
+Return ONLY valid JSON:
 {"isOrder": true/false, "orderData": {...}, "debugInfo": {"language": "xx", "emailType": "..."}}
 
 Email:
-${emailText.substring(0, 5000)}`  // Gemini can handle more content
+${emailText.substring(0, 8000)}`  // Increased to capture more order details
 
       const result = await this.model.generateContent(prompt)
       const response = result.response
@@ -122,6 +128,16 @@ ${emailText.substring(0, 5000)}`  // Gemini can handle more content
         // If it's an order but missing confidence, set a default
         if (!parsedResult.orderData.confidence) {
           parsedResult.orderData.confidence = 0.5
+        }
+        
+        // For Coolblue, if order number is missing, try to extract from subject
+        if (!parsedResult.orderData.orderNumber && parsedResult.orderData.retailer?.toLowerCase().includes('coolblue')) {
+          // Try to find order number in subject or body
+          const orderMatch = emailContent.subject.match(/\d{6,}/) || emailContent.body.match(/bestelnummer[:\s]+(\d+)/i);
+          if (orderMatch) {
+            parsedResult.orderData.orderNumber = orderMatch[1] || orderMatch[0];
+            console.log(`Extracted Coolblue order number from pattern: ${parsedResult.orderData.orderNumber}`);
+          }
         }
       }
       

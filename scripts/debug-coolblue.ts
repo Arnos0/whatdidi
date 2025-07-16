@@ -5,12 +5,32 @@ import { createClient } from '@supabase/supabase-js'
 dotenv.config({ path: '.env.local' })
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 async function debugCoolblue() {
   console.log('Debugging Coolblue emails...\n')
   
   const supabase = createClient(supabaseUrl, supabaseKey)
+  
+  // First check if we can access the table at all
+  const { data: testAccess, error: accessError } = await supabase
+    .from('processed_emails')
+    .select('id')
+    .limit(1)
+  
+  if (accessError) {
+    console.error('Error accessing processed_emails table:', accessError)
+    console.log('\nTrying to access email_scan_jobs instead...')
+    
+    const { data: scanJobs } = await supabase
+      .from('email_scan_jobs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5)
+    
+    console.log('Recent scan jobs:', scanJobs?.length || 0)
+    return
+  }
   
   // First check total emails
   const { count: totalCount } = await supabase
