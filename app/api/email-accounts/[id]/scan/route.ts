@@ -5,7 +5,7 @@ import { serverUserQueries, serverEmailAccountQueries } from '@/lib/supabase/ser
 import { createServerClient } from '@/lib/supabase/server-client'
 import { GmailService } from '@/lib/email/gmail-service'
 import { AIEmailClassifier } from '@/lib/email/ai-parser'
-import { claudeService } from '@/lib/ai/claude-service'
+import { aiService } from '@/lib/ai/ai-service'
 import type { DateRange, ScanType } from '@/lib/types/email'
 
 const scanRequestSchema = z.object({
@@ -155,8 +155,11 @@ async function processScanJob(
 
   try {
     // Check if AI API key is configured
-    if (!process.env.ANTHROPIC_API_KEY) {
+    const aiProvider = process.env.AI_SERVICE || 'gemini'
+    if (aiProvider === 'claude' && !process.env.ANTHROPIC_API_KEY) {
       throw new Error('ANTHROPIC_API_KEY is not configured. Please add it to your environment variables.')
+    } else if (aiProvider === 'gemini' && !process.env.GOOGLE_AI_API_KEY) {
+      throw new Error('GOOGLE_AI_API_KEY is not configured. Please add it to your environment variables.')
     }
     // Update job status to running
     await supabase
@@ -185,8 +188,8 @@ async function processScanJob(
       .update({ emails_found: totalEmails })
       .eq('id', jobId)
 
-    // Process emails in smaller batches for better progress visibility
-    const batchSize = 10 // Smaller batches = more frequent progress updates
+    // Process emails in larger batches with Gemini (no rate limits!)
+    const batchSize = process.env.AI_SERVICE === 'claude' ? 10 : 50 // Gemini can handle larger batches
     let processed = 0
     let ordersCreated = 0
     let errors = 0
@@ -259,7 +262,7 @@ async function processScanJob(
           })
           
           // Use batch analysis with error handling
-          const batchResults = await claudeService.batchAnalyzeEmails(emailsForAI)
+          const batchResults = await aiService.batchAnalyzeEmails(emailsForAI)
           
           // Process results
           for (const email of emailsToAnalyze) {
@@ -495,7 +498,8 @@ async function processScanJob(
     const totalElapsed = Date.now() - scanStartTime
     const totalSeconds = totalElapsed / 1000
     const avgEmailsPerSecond = processed / totalSeconds
-    const estimatedCost = aiAnalysisCount * 0.003 // ~$0.003 per email
+    const costPerEmail = process.env.AI_SERVICE === 'claude' ? 0.003 : 0.00007 // Claude: $0.003, Gemini: $0.00007
+    const estimatedCost = aiAnalysisCount * costPerEmail
     
     console.log(`Scan completed in ${totalSeconds.toFixed(1)}s:`)
     console.log(`- ${processed} emails processed (${avgEmailsPerSecond.toFixed(1)}/sec)`)

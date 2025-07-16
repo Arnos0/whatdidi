@@ -1,10 +1,10 @@
 import type { GmailMessage, ParsedOrder, EmailParser } from '@/lib/types/email'
 import { GmailService } from '@/lib/email/gmail-service'
-import { ClaudeService, claudeService } from '@/lib/ai/claude-service'
+import { aiService, shouldAnalyzeEmail } from '@/lib/ai/ai-service'
 
 /**
  * Universal AI-powered email parser
- * Uses Claude to intelligently extract order information from any email
+ * Uses AI (Gemini/Claude) to intelligently extract order information from any email
  * Handles all languages and retailers without custom code
  */
 export class AIEmailParser implements EmailParser {
@@ -23,8 +23,8 @@ export class AIEmailParser implements EmailParser {
     // Debug logging to see what we're checking
     console.log(`Pre-filter check: "${subject}" from ${from} (body length: ${body.length})`)
     
-    // Use Claude's pre-filter to check if this email is worth analyzing
-    const shouldAnalyze = ClaudeService.shouldAnalyzeEmail({
+    // Use AI's pre-filter to check if this email is worth analyzing
+    const shouldAnalyze = shouldAnalyzeEmail({
       subject,
       from,
       body
@@ -51,8 +51,8 @@ export class AIEmailParser implements EmailParser {
         return null
       }
       
-      // Analyze with Claude
-      const result = await claudeService.analyzeEmail({
+      // Analyze with AI service
+      const result = await aiService.analyzeEmail({
         subject,
         from,
         date,
