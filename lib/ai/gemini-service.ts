@@ -89,14 +89,34 @@ ${emailText.substring(0, 5000)}`  // Gemini can handle more content
       // Parse the JSON response (Gemini returns clean JSON with responseMimeType)
       const parsedResult = JSON.parse(text)
       
+      // Debug: Log the full Gemini response for orders
+      if (parsedResult.isOrder) {
+        console.log('Full Gemini response for order:', JSON.stringify(parsedResult, null, 2))
+      }
+      
       // Ensure we always have proper structure
       if (!parsedResult.hasOwnProperty('isOrder')) {
         parsedResult.isOrder = false
       }
       
-      // If it's an order but missing confidence, set a default
-      if (parsedResult.isOrder && parsedResult.orderData && !parsedResult.orderData.confidence) {
-        parsedResult.orderData.confidence = 0.5
+      // Fix Gemini returning amount as string instead of number
+      if (parsedResult.isOrder && parsedResult.orderData) {
+        if (typeof parsedResult.orderData.amount === 'string') {
+          parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount)
+        }
+        
+        // Also fix item prices if they're strings
+        if (parsedResult.orderData.items && Array.isArray(parsedResult.orderData.items)) {
+          parsedResult.orderData.items = parsedResult.orderData.items.map((item: any) => ({
+            ...item,
+            price: typeof item.price === 'string' ? parseFloat(item.price) : item.price
+          }))
+        }
+        
+        // If it's an order but missing confidence, set a default
+        if (!parsedResult.orderData.confidence) {
+          parsedResult.orderData.confidence = 0.5
+        }
       }
       
       // Log for debugging
@@ -209,6 +229,10 @@ ${emailText.substring(0, 5000)}`  // Gemini can handle more content
     ]
     
     if (rejectPatterns.some(pattern => subjectLower.includes(pattern))) {
+      // Log when Coolblue emails are rejected
+      if (fromLower.includes('coolblue') || subjectLower.includes('coolblue')) {
+        console.log(`WARNING: Coolblue email rejected by filter: "${email.subject}" from ${email.from}`)
+      }
       return false
     }
     

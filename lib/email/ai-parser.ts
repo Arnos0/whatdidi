@@ -20,6 +20,14 @@ export class AIEmailParser implements EmailParser {
     const { subject, from, htmlBody, textBody } = GmailService.extractContent(email)
     const body = htmlBody || textBody || ''
     
+    // Always analyze Coolblue emails for debugging
+    if (from.toLowerCase().includes('coolblue') || subject.toLowerCase().includes('coolblue')) {
+      console.log(`COOLBLUE EMAIL DETECTED: "${subject}" from ${from}`)
+      console.log(`  - Body length: ${body.length}`)
+      console.log(`  - Will force AI analysis for Coolblue`)
+      return true
+    }
+    
     // Debug logging to see what we're checking
     console.log(`Pre-filter check: "${subject}" from ${from} (body length: ${body.length})`)
     

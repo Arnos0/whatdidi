@@ -123,6 +123,13 @@ export class GmailService {
     console.log('Full Scan: Getting ALL emails from Gmail')
     console.log('Date range:', dateRange)
     
+    // Calculate exact date range for logging
+    const fromDate = getDateFromRange(dateRange)
+    if (fromDate) {
+      console.log(`Searching emails from: ${fromDate.toISOString()} to: ${new Date().toISOString()}`)
+      console.log(`That's ${Math.round((Date.now() - fromDate.getTime()) / (1000 * 60 * 60 * 24))} days of emails`)
+    }
+    
     // Fetch ALL messages using pagination
     let allMessages: Array<{ id: string; threadId: string }> = []
     let pageToken: string | undefined

@@ -9,7 +9,7 @@ import { aiService } from '@/lib/ai/ai-service'
 import type { DateRange, ScanType } from '@/lib/types/email'
 
 const scanRequestSchema = z.object({
-  dateRange: z.enum(['1_week', '2_weeks', '1_month', '3_months', '6_months']).default('1_month'),
+  dateRange: z.enum(['1_week', '2_weeks', '1_month', '3_months', '6_months']).default('2_weeks'),
   scanType: z.enum(['full', 'incremental']).default('incremental')
 })
 
@@ -176,6 +176,12 @@ async function processScanJob(
       emailAccount.refresh_token
     )
 
+    // Log exact date range being scanned
+    const dateFrom = getDateFromRange(dateRange)
+    const dateTo = new Date()
+    console.log(`Scan job ${jobId}: Scanning emails from ${dateFrom?.toISOString()} to ${dateTo.toISOString()}`)
+    console.log(`Date range: ${dateRange} (${dateFrom ? Math.round((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)) : 'all'} days)`)
+
     // Search for order emails
     const searchResult = await gmail.searchOrderEmails(dateRange)
     const totalEmails = searchResult.messages?.length || 0
@@ -243,6 +249,22 @@ async function processScanJob(
       
       console.log(`Batch: ${emailsToAnalyze.length} emails for AI analysis, ${emailsToSkip.length} skipped`)
       
+      // Log Coolblue emails specifically
+      const coolblueEmails = emails.filter(email => {
+        const { from, subject } = GmailService.extractContent(email)
+        return from.toLowerCase().includes('coolblue') || subject.toLowerCase().includes('coolblue')
+      })
+      if (coolblueEmails.length > 0) {
+        console.log(`Found ${coolblueEmails.length} Coolblue emails in this batch`)
+        coolblueEmails.forEach(email => {
+          const { subject, from, date } = GmailService.extractContent(email)
+          const classification = emailClassifications.get(email.id)
+          console.log(`Coolblue email: "${subject}" from ${from} on ${date.toISOString()}`)
+          console.log(`  - Classification: ${classification?.parser || 'none'}, retailer: ${classification?.retailer}`)
+          console.log(`  - Will analyze with AI: ${emailsToAnalyze.includes(email)}`)
+        })
+      }
+      
       // Process AI emails in smaller groups to avoid overwhelming the system
       const aiResults = new Map<string, any>()
       if (emailsToAnalyze.length > 0) {
@@ -267,6 +289,17 @@ async function processScanJob(
           // Process results
           for (const email of emailsToAnalyze) {
             const result = batchResults.get(email.id)
+            const { from, subject } = GmailService.extractContent(email)
+            
+            // Log Coolblue AI results specifically
+            if (from.toLowerCase().includes('coolblue') || subject.toLowerCase().includes('coolblue')) {
+              console.log(`Coolblue AI result for "${subject}":`)
+              console.log(`  - isOrder: ${result?.isOrder}, confidence: ${result?.orderData?.confidence}`)
+              if (result?.orderData) {
+                console.log(`  - Order data:`, JSON.stringify(result.orderData, null, 2))
+              }
+            }
+            
             if (result && result.isOrder && result.orderData) {
               aiResults.set(email.id, {
                 ...result.orderData,

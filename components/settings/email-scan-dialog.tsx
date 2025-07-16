@@ -47,7 +47,7 @@ export function EmailScanDialog({
   open,
   onOpenChange,
 }: EmailScanDialogProps) {
-  const [dateRange, setDateRange] = useState<DateRange>('1_month')
+  const [dateRange, setDateRange] = useState<DateRange>('2_weeks')
   const [scanType, setScanType] = useState<ScanType>('incremental')
   
   const startScan = useStartEmailScan(accountId)
