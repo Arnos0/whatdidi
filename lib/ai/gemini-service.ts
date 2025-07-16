@@ -114,14 +114,15 @@ ${emailText.substring(0, 8000)}`  // Increased to capture more order details
         }
         
         if (typeof parsedResult.orderData.amount === 'string') {
-          parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount)
+          // Handle Dutch number format (comma as decimal separator)
+          parsedResult.orderData.amount = parseFloat(parsedResult.orderData.amount.replace(',', '.'))
         }
         
         // Also fix item prices if they're strings
         if (parsedResult.orderData.items && Array.isArray(parsedResult.orderData.items)) {
           parsedResult.orderData.items = parsedResult.orderData.items.map((item: any) => ({
             ...item,
-            price: typeof item.price === 'string' ? parseFloat(item.price) : item.price
+            price: typeof item.price === 'string' ? parseFloat(item.price.replace(',', '.')) : item.price
           }))
         }
         
