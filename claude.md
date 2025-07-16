@@ -1,5 +1,18 @@
 # WhatDidiShop - Development Documentation
 
+## 🚨 PRIORITY: Migrate to Gemini 2.0 Flash (2025-07-16)
+
+We implemented AI email parsing with Claude but hit severe rate limits:
+- Only 30 emails/minute (40k token limit)
+- Costs $0.003/email
+- Poor user experience (stuck progress bar)
+
+**Next session: Implement Gemini 2.0 Flash**
+- 10x faster (200+ emails/min)
+- 40x cheaper ($0.00007/email)
+- No rate limits
+- See GEMINI_MIGRATION_PLAN.md for details
+
 ## RULES
 
 1. First think through the problem, read the codebase for relevant files, and write a plan to tasks/todo.md.
