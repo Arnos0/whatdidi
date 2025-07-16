@@ -471,7 +471,6 @@ async function processScanJob(
             } else {
               console.log(`Email not detected as order: ${email.id}`)
             }
-          }
 
           // Record processed email (should be outside the parsedOrder check)
           const { subject, from, date } = GmailService.extractContent(email)
