@@ -1,11 +1,24 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { Order, OrderStatus } from '@/lib/supabase/types'
-import { Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Package, Truck, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react'
+import { useDeleteOrder } from '@/hooks/use-orders'
 
 interface OrderListProps {
   orders: Order[]
@@ -42,9 +55,26 @@ const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 's
 
 export function OrderList({ orders, isLoading }: OrderListProps) {
   const router = useRouter()
+  const deleteOrder = useDeleteOrder()
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
 
   const handleOrderClick = (orderId: string) => {
     router.push(`/orders/${orderId}`)
+  }
+
+  const handleDeleteClick = (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation() // Prevent navigation to order detail
+    setOrderToDelete(orderId)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (orderToDelete) {
+      await deleteOrder.mutateAsync(orderToDelete)
+      setDeleteConfirmOpen(false)
+      setOrderToDelete(null)
+    }
   }
 
   if (isLoading) {
@@ -82,6 +112,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Date</th>
                   <th className="px-6 py-3">Tracking</th>
+                  <th className="px-6 py-3 w-10"></th>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +157,16 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </td>
+                      <td className="px-6 py-4">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDeleteClick(e, order.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
                     </tr>
                   )
                 })}
@@ -151,10 +192,20 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                     <div className="font-medium">#{order.order_number}</div>
                     <div className="text-sm text-muted-foreground">{order.retailer}</div>
                   </div>
-                  <Badge variant={statusInfo.variant} className="gap-1">
-                    {statusInfo.icon}
-                    {statusInfo.label}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusInfo.variant} className="gap-1">
+                      {statusInfo.icon}
+                      {statusInfo.label}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteClick(e, order.id)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="flex justify-between items-center">
@@ -180,6 +231,26 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
           )
         })}
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

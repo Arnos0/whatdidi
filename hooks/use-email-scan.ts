@@ -110,7 +110,7 @@ export function getScanStatusDisplay(scanJob: EmailScanJob | null): {
     case 'completed':
       return {
         label: 'Scan complete',
-        description: `Found ${scanJob.orders_created} orders from ${scanJob.emails_processed} emails`,
+        description: `Found ${scanJob.orders_created} orders from ${scanJob.emails_found} emails`,
         isRunning: false,
         progress: 100,
       }

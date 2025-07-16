@@ -6,7 +6,7 @@ export type ScanStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cance
 
 export type ScanType = 'full' | 'incremental'
 
-export type DateRange = '1_month' | '3_months' | '6_months' | '1_year' | '2_years' | 'all'
+export type DateRange = '1_week' | '2_weeks' | '1_month' | '3_months' | '6_months'
 
 export interface ScanConfig {
   date_range: DateRange
@@ -82,6 +82,7 @@ export interface ParsedOrder {
   amount: number
   currency: string
   order_date: string
+  status?: 'confirmed' | 'shipped' | 'delivered'
   estimated_delivery?: string | null
   tracking_number?: string | null
   carrier?: string | null
@@ -101,17 +102,21 @@ export interface EmailParser {
 }
 
 // Date range configurations in milliseconds
-export const DATE_RANGE_MS: Record<DateRange, number | null> = {
+export const DATE_RANGE_MS: Record<DateRange, number> = {
+  '1_week': 7 * 24 * 60 * 60 * 1000,
+  '2_weeks': 14 * 24 * 60 * 60 * 1000,
   '1_month': 30 * 24 * 60 * 60 * 1000,
   '3_months': 90 * 24 * 60 * 60 * 1000,
-  '6_months': 180 * 24 * 60 * 60 * 1000,
-  '1_year': 365 * 24 * 60 * 60 * 1000,
-  '2_years': 730 * 24 * 60 * 60 * 1000,
-  'all': null
+  '6_months': 180 * 24 * 60 * 60 * 1000
 }
 
-export function getDateFromRange(range: DateRange): Date | null {
+export function getDateFromRange(range: DateRange): Date {
   const ms = DATE_RANGE_MS[range]
-  if (ms === null) return null
   return new Date(Date.now() - ms)
+}
+
+export function getDateRange(range: DateRange): { startDate: Date; endDate: Date } {
+  const startDate = getDateFromRange(range)
+  const endDate = new Date()
+  return { startDate, endDate }
 }

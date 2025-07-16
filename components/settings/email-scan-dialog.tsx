@@ -33,12 +33,11 @@ interface EmailScanDialogProps {
 }
 
 const dateRangeOptions: { value: DateRange; label: string; description: string }[] = [
-  { value: '1_month', label: 'Last month', description: 'Scan emails from the last 30 days' },
-  { value: '3_months', label: 'Last 3 months', description: 'Scan emails from the last 90 days' },
-  { value: '6_months', label: 'Last 6 months', description: 'Recommended for first scan' },
-  { value: '1_year', label: 'Last year', description: 'Scan emails from the last 365 days' },
-  { value: '2_years', label: 'Last 2 years', description: 'Scan emails from the last 2 years' },
-  { value: 'all', label: 'All emails', description: 'Scan all emails (may take a long time)' },
+  { value: '1_week', label: 'Last week', description: 'Quick scan for recent orders' },
+  { value: '2_weeks', label: 'Last 2 weeks', description: 'Catch recent deliveries' },
+  { value: '1_month', label: 'Last month', description: 'Standard scan period' },
+  { value: '3_months', label: 'Last 3 months', description: 'Recommended for first scan' },
+  { value: '6_months', label: 'Last 6 months', description: 'Initial setup only' },
 ]
 
 export function EmailScanDialog({
@@ -48,7 +47,7 @@ export function EmailScanDialog({
   open,
   onOpenChange,
 }: EmailScanDialogProps) {
-  const [dateRange, setDateRange] = useState<DateRange>('6_months')
+  const [dateRange, setDateRange] = useState<DateRange>('1_month')
   const [scanType, setScanType] = useState<ScanType>('incremental')
   
   const startScan = useStartEmailScan(accountId)
@@ -126,14 +125,14 @@ export function EmailScanDialog({
                   <SelectContent>
                     <SelectItem value="incremental">
                       <div>
-                        <div className="font-medium">Incremental</div>
-                        <div className="text-xs text-muted-foreground">Only scan new emails</div>
+                        <div className="font-medium">Incremental Scan</div>
+                        <div className="text-xs text-muted-foreground">Skip emails already scanned before</div>
                       </div>
                     </SelectItem>
                     <SelectItem value="full">
                       <div>
                         <div className="font-medium">Full Scan</div>
-                        <div className="text-xs text-muted-foreground">Re-scan all emails in range</div>
+                        <div className="text-xs text-muted-foreground">Scan all emails (including previously scanned)</div>
                       </div>
                     </SelectItem>
                   </SelectContent>

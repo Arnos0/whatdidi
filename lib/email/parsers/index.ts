@@ -1,5 +1,8 @@
 import { ParserRegistry } from './parser-registry'
 import { BolParser } from './retailers/bol-parser'
+import { CoolblueParser } from './retailers/coolblue-parser'
+import { ZalandoParser } from './retailers/zalando-parser'
+import { DHLParser } from './retailers/dhl-parser'
 
 /**
  * Register all available parsers
@@ -11,11 +14,14 @@ export function registerParsers() {
   
   // Register all retailer parsers
   ParserRegistry.register(new BolParser())
+  ParserRegistry.register(new CoolblueParser())
+  ParserRegistry.register(new ZalandoParser())
+  ParserRegistry.register(new DHLParser())
   
   // TODO: Add more parsers as they are implemented
   // ParserRegistry.register(new AmazonParser())
-  // ParserRegistry.register(new CoolblueParser())
-  // ParserRegistry.register(new ZalandoParser())
+  // ParserRegistry.register(new MediaMarktParser())
+  // ParserRegistry.register(new AlbertHeijnParser())
 }
 
 // Export commonly used classes

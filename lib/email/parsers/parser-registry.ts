@@ -108,7 +108,7 @@ export class EmailClassifier {
   private static identifyRetailerFromSender(from: string): string | null {
     const commonRetailers: Record<string, string[]> = {
       'Amazon': ['amazon.com', 'amazon.nl', 'amazon.de'],
-      'Bol.com': ['bol.com'],
+      'Bol.com': ['bol.com', 'partnerbol.com'],
       'Coolblue': ['coolblue.nl', 'coolblue.be'],
       'Zalando': ['zalando.nl', 'zalando.com', 'zalando.de'],
       'MediaMarkt': ['mediamarkt.nl', 'mediamarkt.de'],
@@ -116,7 +116,19 @@ export class EmailClassifier {
       'Jumbo': ['jumbo.com'],
       'Ikea': ['ikea.com', 'ikea.nl'],
       'Decathlon': ['decathlon.nl', 'decathlon.com'],
-      'H&M': ['hm.com', 'h&m.com']
+      'H&M': ['hm.com', 'h&m.com', 'hm2.com'],
+      'Wehkamp': ['wehkamp.nl'],
+      'HEMA': ['hema.nl'],
+      'Bijenkorf': ['bijenkorf.nl', 'debijenkorf.nl'],
+      'Douglas': ['douglas.nl'],
+      'Etos': ['etos.nl'],
+      'Kruidvat': ['kruidvat.nl'],
+      'Action': ['action.com'],
+      'Blokker': ['blokker.nl'],
+      'Karwei': ['karwei.nl'],
+      'Praxis': ['praxis.nl'],
+      'Gamma': ['gamma.nl'],
+      'DHL': ['dhl.nl', 'dhl.com', 'dhlparcel.nl', 'dhl-parcel.nl']
     }
     
     const fromLower = from.toLowerCase()

@@ -178,3 +178,78 @@ export function useCreateOrder() {
     },
   })
 }
+
+export function useDeleteOrder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to delete order'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // If response is not JSON, use default error message
+        }
+        throw new Error(errorMessage)
+      }
+
+      return response.json()
+    },
+    onSuccess: () => {
+      // Invalidate orders query to refetch
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      toast.success('Order deleted successfully!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete order')
+    },
+  })
+}
+
+export function useResetOrders() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (confirmation: string) => {
+      const response = await fetch('/api/orders/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ confirmation }),
+      })
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to reset orders'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (e) {
+          // If response is not JSON, use default error message
+        }
+        throw new Error(errorMessage)
+      }
+
+      return response.json()
+    },
+    onSuccess: (data) => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['retailers'] })
+      queryClient.invalidateQueries({ queryKey: ['email-accounts'] })
+      
+      toast.success(
+        `Reset complete! Deleted ${data.deleted.orders} orders and cleared all scan history.`
+      )
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to reset orders')
+    },
+  })
+}

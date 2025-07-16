@@ -29,7 +29,7 @@ export class GmailService {
     
     // Build query with date filter if specified
     let fullQuery = query
-    if (dateRange && dateRange !== 'all') {
+    if (dateRange) {
       const fromDate = getDateFromRange(dateRange)
       if (fromDate) {
         const dateStr = fromDate.toISOString().split('T')[0]
@@ -65,88 +65,152 @@ export class GmailService {
    * Get multiple messages in a batch (more efficient)
    */
   async getMessagesBatch(messageIds: string[]): Promise<GmailMessage[]> {
-    // Gmail batch API has a limit of 100 requests per batch
-    const batchSize = 100
+    // Increase concurrent requests for better performance
+    const concurrentLimit = 10 // Process 10 at a time
     const messages: GmailMessage[] = []
+    let rateLimitDelay = 100 // Start with minimal delay
     
-    for (let i = 0; i < messageIds.length; i += batchSize) {
-      const batch = messageIds.slice(i, i + batchSize)
+    // Process in smaller chunks with adaptive delays
+    for (let i = 0; i < messageIds.length; i += concurrentLimit) {
+      const batch = messageIds.slice(i, i + concurrentLimit)
+      const startTime = Date.now()
+      
+      // Process this batch
       const batchPromises = batch.map(id => this.getMessage(id))
-      const batchResults = await Promise.all(batchPromises)
-      messages.push(...batchResults)
+      try {
+        const batchResults = await Promise.all(batchPromises)
+        messages.push(...batchResults)
+        
+        // Reset delay on success
+        rateLimitDelay = Math.max(100, rateLimitDelay * 0.9)
+      } catch (error: any) {
+        console.error(`Error processing batch starting at index ${i}:`, error)
+        
+        // If rate limited, increase delay
+        if (error.message?.includes('429') || error.message?.includes('Rate')) {
+          rateLimitDelay = Math.min(2000, rateLimitDelay * 2)
+          console.log(`Rate limited, increasing delay to ${rateLimitDelay}ms`)
+        }
+        // Continue with next batch even if this one fails
+      }
+      
+      // Add adaptive delay between batches
+      if (i + concurrentLimit < messageIds.length) {
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay))
+      }
+      
+      // Log progress with timing
+      const elapsed = Date.now() - startTime
+      console.log(`Fetched ${messages.length}/${messageIds.length} messages (${elapsed}ms)...`)
     }
     
     return messages
   }
 
   /**
-   * Search for emails that might contain order confirmations
+   * Get ALL emails within a date range - no filtering
+   * This is used for Full Scan functionality where we check every email
    */
   async searchOrderEmails(dateRange: DateRange = '6_months'): Promise<{
     messages: Array<{ id: string; threadId: string }>
     nextPageToken?: string
     resultSizeEstimate: number
   }> {
-    // Common order confirmation keywords across multiple languages
-    const orderKeywords = [
-      'order confirmation',
-      'order confirmed',
-      'purchase confirmation',
-      'receipt',
-      'invoice',
-      'bestelling', // Dutch
-      'bevestiging', // Dutch
-      'factuur', // Dutch
-      'has:attachment', // Often receipts are attached
-      'from:noreply', // Many confirmations come from noreply addresses
-      'from:orders',
-      'from:shop',
-      'from:store'
-    ]
+    // For full scan: NO search query - get ALL emails
+    // We'll let the parsers determine what's an order
+    const query = ''
     
-    const query = `(${orderKeywords.join(' OR ')})`
+    console.log('Full Scan: Getting ALL emails from Gmail')
+    console.log('Date range:', dateRange)
     
-    return this.listMessages({
-      query,
-      dateRange,
-      maxResults: 100
+    // Fetch ALL messages using pagination
+    let allMessages: Array<{ id: string; threadId: string }> = []
+    let pageToken: string | undefined
+    let totalEstimate = 0
+    
+    do {
+      const result = await this.listMessages({
+        query,
+        dateRange,
+        maxResults: 500, // Max allowed per request
+        pageToken
+      })
+      
+      if (result.messages) {
+        allMessages = allMessages.concat(result.messages)
+      }
+      
+      pageToken = result.nextPageToken
+      totalEstimate = result.resultSizeEstimate || 0
+      
+      console.log(`Fetched ${allMessages.length} messages so far (estimated total: ${totalEstimate})...`)
+      
+      // Add small delay between pages to avoid rate limits
+      if (pageToken) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    } while (pageToken && allMessages.length < 5000) // Safety limit of 5000 emails
+    
+    console.log('Gmail search complete:', {
+      estimated: totalEstimate,
+      returned: allMessages.length
     })
+    
+    return {
+      messages: allMessages,
+      resultSizeEstimate: totalEstimate
+    }
   }
 
   /**
    * Make authenticated request to Gmail API
    */
-  private async makeRequest(url: string, options: RequestInit = {}): Promise<any> {
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          ...options.headers
+  private async makeRequest(url: string, options: RequestInit = {}, retries = 3): Promise<any> {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+          }
+        })
+        
+        if (response.status === 401) {
+          // Token expired, try to refresh
+          if (this.refreshToken) {
+            await this.refreshAccessToken()
+            // Retry the request with new token
+            return this.makeRequest(url, options)
+          } else {
+            throw new Error('Access token expired and no refresh token available')
+          }
         }
-      })
-      
-      if (response.status === 401) {
-        // Token expired, try to refresh
-        if (this.refreshToken) {
-          await this.refreshAccessToken()
-          // Retry the request with new token
-          return this.makeRequest(url, options)
-        } else {
-          throw new Error('Access token expired and no refresh token available')
+        
+        if (response.status === 429) {
+          // Rate limited - wait and retry
+          const retryAfter = response.headers.get('Retry-After') || '5'
+          const waitTime = parseInt(retryAfter) * 1000
+          console.log(`Rate limited. Waiting ${waitTime}ms before retry...`)
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue // Retry the request
         }
+        
+        if (!response.ok) {
+          const error = await response.text()
+          throw new Error(`Gmail API error: ${response.status} - ${error}`)
+        }
+        
+        return response.json()
+      } catch (error) {
+        if (attempt === retries - 1) {
+          console.error('Gmail API request failed after retries:', error)
+          throw error
+        }
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
-      
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`Gmail API error: ${response.status} - ${error}`)
-      }
-      
-      return response.json()
-    } catch (error) {
-      console.error('Gmail API request failed:', error)
-      throw error
     }
   }
 
