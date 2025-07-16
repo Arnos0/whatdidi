@@ -407,61 +407,112 @@ async function processScanJob(
                 
                 // For DHL tracking emails, try to find order by tracking number
                 if (parsedOrder.retailer === 'DHL Tracking' && parsedOrder.tracking_number) {
-                  // First try to find by tracking number
-                  const { data } = await supabase
-                    .from('orders')
-                    .select('id')
-                    .eq('user_id', emailAccount.user_id)
-                    .eq('tracking_number', parsedOrder.tracking_number)
-                    .single()
-                  existingOrder = data
+                  console.log(`DHL: Starting tracking lookup for ${parsedOrder.tracking_number}`)
+                  
+                  try {
+                    // First try to find by tracking number
+                    console.log(`DHL: Querying orders table for tracking number...`)
+                    const { data, error } = await supabase
+                      .from('orders')
+                      .select('id')
+                      .eq('user_id', emailAccount.user_id)
+                      .eq('tracking_number', parsedOrder.tracking_number)
+                      .maybeSingle() // Use maybeSingle to handle 0 or 1 results
+                    
+                    if (error) {
+                      console.error(`DHL: Error finding order by tracking number:`, error)
+                      throw error
+                    }
+                    
+                    existingOrder = data
+                    console.log(`DHL: Found existing order by tracking:`, existingOrder ? 'YES' : 'NO')
+                  } catch (error) {
+                    console.error(`DHL: Failed to query orders by tracking number:`, error)
+                    // Continue processing even if this query fails
+                  }
                   
                   // If not found by tracking number, try to find recent orders without tracking
                   if (!existingOrder) {
-                    const retailerName = parsedOrder.retailer.replace('DHL Tracking', '').trim()
-                    const { data: recentOrders } = await supabase
-                      .from('orders')
-                      .select('id, order_number, retailer')
-                      .eq('user_id', emailAccount.user_id)
-                      .is('tracking_number', null)
-                      .in('status', ['pending', 'processing', 'confirmed'])
-                      .gte('order_date', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()) // Last 2 weeks
-                      .order('order_date', { ascending: false })
-                      .limit(5)
+                    console.log(`DHL: No existing order found, searching for recent orders without tracking...`)
                     
-                    // Try to match by retailer name or find most recent untracked order
-                    if (recentOrders && recentOrders.length > 0) {
-                      // Check if DHL email mentions a specific retailer
-                      if (retailerName && retailerName !== 'DHL Tracking') {
-                        existingOrder = recentOrders.find(o => 
-                          o.retailer.toLowerCase().includes(retailerName.toLowerCase())
-                        ) || recentOrders[0]
-                      } else {
-                        // Use most recent order without tracking
-                        existingOrder = recentOrders[0]
+                    try {
+                      const retailerName = parsedOrder.retailer.replace('DHL Tracking', '').trim()
+                      const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+                      
+                      console.log(`DHL: Searching for orders from ${twoWeeksAgo} onwards`)
+                      
+                      const { data: recentOrders, error: recentOrdersError } = await supabase
+                        .from('orders')
+                        .select('id, order_number, retailer')
+                        .eq('user_id', emailAccount.user_id)
+                        .is('tracking_number', null)
+                        .in('status', ['pending', 'processing', 'confirmed'])
+                        .gte('order_date', twoWeeksAgo)
+                        .order('order_date', { ascending: false })
+                        .limit(5)
+                      
+                      if (recentOrdersError) {
+                        console.error(`DHL: Error finding recent orders:`, recentOrdersError)
+                        throw recentOrdersError
                       }
                       
-                      if (existingOrder) {
-                        console.log(`Linking DHL tracking ${parsedOrder.tracking_number} to order ${existingOrder.order_number} from ${existingOrder.retailer}`)
+                      console.log(`DHL: Found ${recentOrders?.length || 0} recent orders without tracking`)
+                      
+                      // Try to match by retailer name or find most recent untracked order
+                      if (recentOrders && recentOrders.length > 0) {
+                        console.log(`DHL: Attempting to match orders with retailer name: "${retailerName}"`)
+                        
+                        // Check if DHL email mentions a specific retailer
+                        if (retailerName && retailerName !== 'DHL Tracking') {
+                          existingOrder = recentOrders.find(o => 
+                            o.retailer.toLowerCase().includes(retailerName.toLowerCase())
+                          ) || recentOrders[0]
+                          console.log(`DHL: Matched by retailer name: ${existingOrder ? 'YES' : 'NO'}`)
+                        } else {
+                          // Use most recent order without tracking
+                          existingOrder = recentOrders[0]
+                          console.log(`DHL: Using most recent order without tracking`)
+                        }
+                        
+                        if (existingOrder) {
+                          console.log(`DHL: Linking tracking ${parsedOrder.tracking_number} to order ${existingOrder.order_number} from ${existingOrder.retailer}`)
+                        }
                       }
+                    } catch (error) {
+                      console.error(`DHL: Failed to find recent orders:`, error)
+                      // Continue processing even if this query fails
                     }
                   }
                   
                   // If found, update the order with tracking info and status
                   if (existingOrder) {
-                    await supabase
-                      .from('orders')
-                      .update({
-                        status: parsedOrder.status,
-                        tracking_number: parsedOrder.tracking_number,
-                        carrier: 'DHL',
-                        estimated_delivery: parsedOrder.estimated_delivery,
-                        updated_at: new Date().toISOString()
-                      })
-                      .eq('id', existingOrder.id)
+                    console.log(`DHL: Updating existing order ${existingOrder.id} with tracking info...`)
                     
-                    orderId = existingOrder.id
-                    console.log(`Updated existing order ${existingOrder.id} with DHL tracking status`)
+                    try {
+                      const { error: updateError } = await supabase
+                        .from('orders')
+                        .update({
+                          status: parsedOrder.status,
+                          tracking_number: parsedOrder.tracking_number,
+                          carrier: 'DHL',
+                          estimated_delivery: parsedOrder.estimated_delivery,
+                          updated_at: new Date().toISOString()
+                        })
+                        .eq('id', existingOrder.id)
+                      
+                      if (updateError) {
+                        console.error(`DHL: Error updating order ${existingOrder.id}:`, updateError)
+                        throw updateError
+                      }
+                      
+                      orderId = existingOrder.id
+                      console.log(`DHL: Successfully updated order ${existingOrder.id} with tracking status`)
+                    } catch (error) {
+                      console.error(`DHL: Failed to update order ${existingOrder.id}:`, error)
+                      // Continue processing even if update fails
+                    }
+                  } else {
+                    console.log(`DHL: No existing order found to link tracking ${parsedOrder.tracking_number}`)
                   }
                 } else if (parsedOrder.order_number) {
                   // For regular orders, check by order number and retailer
