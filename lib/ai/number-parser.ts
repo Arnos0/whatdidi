@@ -1,82 +1,38 @@
 /**
  * Parse European number formats based on language
- * Handles different decimal separators and thousand separators
+ * MVP: Simplified for English and Dutch only
  */
 
-export function parseEuropeanNumber(value: string, language: string): number {
-  if (typeof value !== 'string') {
-    return typeof value === 'number' ? value : 0
+import { parseFlexibleNumber, parseDutchNumber } from '@/lib/utils/dutch-number-parser'
+
+export function parseEuropeanNumber(value: string | number, language: string): number {
+  if (typeof value === 'number') {
+    return value
   }
 
-  // Remove currency symbols and extra spaces
-  let cleanValue = value
-    .replace(/[€$£¥₹]/g, '') // Remove currency symbols
-    .replace(/\s+/g, '') // Remove spaces
-    .trim()
-
-  // Handle different number formats by language
-  switch (language) {
-    case 'nl':
-    case 'de':
-      // Dutch/German format: 1.234,56 or 1234,56
-      if (cleanValue.includes(',') && cleanValue.includes('.')) {
-        // Format: 1.234,56 (dot as thousand separator, comma as decimal)
-        cleanValue = cleanValue.replace(/\./g, '').replace(',', '.')
-      } else if (cleanValue.includes(',')) {
-        // Format: 1234,56 (comma as decimal separator)
-        cleanValue = cleanValue.replace(',', '.')
-      }
-      break
-    
-    case 'fr':
-      // French format: 1 234,56 or 1234,56
-      if (cleanValue.includes(' ') && cleanValue.includes(',')) {
-        // Format: 1 234,56 (space as thousand separator, comma as decimal)
-        cleanValue = cleanValue.replace(/\s/g, '').replace(',', '.')
-      } else if (cleanValue.includes(',')) {
-        // Format: 1234,56 (comma as decimal separator)
-        cleanValue = cleanValue.replace(',', '.')
-      }
-      break
-    
-    case 'en':
-    default:
-      // English format: 1,234.56 or 1234.56
-      if (cleanValue.includes(',') && cleanValue.includes('.')) {
-        // Format: 1,234.56 (comma as thousand separator, dot as decimal)
-        cleanValue = cleanValue.replace(/,/g, '')
-      }
-      // Format: 1234.56 (dot as decimal separator) - no change needed
-      break
+  // MVP: Only handle English and Dutch
+  if (language === 'nl') {
+    return parseDutchNumber(value)
+  } else {
+    // Default to flexible parser that auto-detects format
+    return parseFlexibleNumber(value)
   }
-
-  // Parse the cleaned value
-  const parsed = parseFloat(cleanValue)
-  return isNaN(parsed) ? 0 : parsed
 }
 
 /**
  * Parse European date formats based on language
- * Handles different date separators and formats
+ * MVP: Simplified for English and Dutch only
  */
 export function parseEuropeanDate(value: string, language: string): string | null {
   if (typeof value !== 'string') {
     return null
   }
 
-  // Common patterns
+  // MVP: Only Dutch and English patterns
   const patterns: Record<string, RegExp[]> = {
     nl: [
       /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/,  // dd/mm/yyyy or dd-mm-yyyy
       /(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/   // yyyy/mm/dd or yyyy-mm-dd
-    ],
-    de: [
-      /(\d{1,2})\.(\d{1,2})\.(\d{4})/,          // dd.mm.yyyy
-      /(\d{4})\.(\d{1,2})\.(\d{1,2})/           // yyyy.mm.dd
-    ],
-    fr: [
-      /(\d{1,2})\/(\d{1,2})\/(\d{4})/,          // dd/mm/yyyy
-      /(\d{4})\/(\d{1,2})\/(\d{1,2})/           // yyyy/mm/dd
     ],
     en: [
       /(\d{1,2})\/(\d{1,2})\/(\d{4})/,          // mm/dd/yyyy
@@ -119,18 +75,26 @@ export function parseEuropeanDate(value: string, language: string): string | nul
 
 /**
  * Test the number parser with different formats
+ * MVP: Testing English and Dutch formats only
  */
 export function testNumberParser() {
   const tests = [
+    // Dutch formats
     { value: '89,99', language: 'nl', expected: 89.99 },
-    { value: '1.234,56', language: 'de', expected: 1234.56 },
-    { value: '1 234,56', language: 'fr', expected: 1234.56 },
-    { value: '1,234.56', language: 'en', expected: 1234.56 },
+    { value: '1.234,56', language: 'nl', expected: 1234.56 },
     { value: '€89,99', language: 'nl', expected: 89.99 },
-    { value: '123', language: 'nl', expected: 123 }
+    { value: 'EUR 1.234,56', language: 'nl', expected: 1234.56 },
+    { value: '123', language: 'nl', expected: 123 },
+    
+    // English formats
+    { value: '89.99', language: 'en', expected: 89.99 },
+    { value: '1,234.56', language: 'en', expected: 1234.56 },
+    { value: '$89.99', language: 'en', expected: 89.99 },
+    { value: 'USD 1,234.56', language: 'en', expected: 1234.56 },
+    { value: '123', language: 'en', expected: 123 }
   ]
 
-  console.log('Testing number parser:')
+  console.log('Testing MVP number parser (English/Dutch):')
   tests.forEach(test => {
     const result = parseEuropeanNumber(test.value, test.language)
     const success = result === test.expected

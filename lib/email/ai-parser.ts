@@ -3,7 +3,6 @@ import { GmailService } from '@/lib/email/gmail-service'
 import { aiService, shouldAnalyzeEmail } from '@/lib/ai/ai-service'
 import { detectEmailLanguage } from './utils/language-detector'
 import { LANGUAGE_PATTERNS, UNIVERSAL_REJECT_PATTERNS } from './utils/multilingual-patterns'
-import { ParserRegistry } from './parsers/parser-registry'
 
 /**
  * Universal AI-powered email parser
@@ -187,33 +186,38 @@ export interface ClassificationResult {
  */
 export class AIEmailClassifier {
   /**
-   * Classify an email with language detection and multilingual patterns
+   * Simplified email classifier - only filters out obvious spam/newsletters
+   * Everything else goes to Gemini for analysis
    */
   static classify(email: GmailMessage): ClassificationResult {
     const { subject, from, htmlBody, textBody } = GmailService.extractContent(email)
     const body = textBody || htmlBody || ''
     const emailText = `${subject} ${body}`.substring(0, 2000)
     
-    // First, check if any specific parser can handle this email
-    const parser = ParserRegistry.findParser(email)
-    if (parser) {
-      console.log(`Parser found for email: ${parser.getRetailerName()}`)
+    // Extract sender domain for language override
+    const senderDomain = from.match(/@([^>]+)/)?.[1]
+    
+    // Check if it's a sent email or email copy
+    if (senderDomain && (
+      senderDomain.includes('wedevelop') || 
+      from.toLowerCase().includes('wedevelop') ||
+      subject.toLowerCase().includes('copy of:') ||
+      subject.toLowerCase().includes('fwd:') ||
+      (subject.toLowerCase().includes('re:') && body.includes('-------- Original Message --------'))
+    )) {
       return {
-        isPotentialOrder: true,
-        confidence: 0.9,
-        language: 'en', // Parser will handle language detection
-        retailer: parser.getRetailerName(),
-        parser: parser,
+        isPotentialOrder: false,
+        confidence: 0.95,
+        language: 'en',
+        retailer: 'sent-email',
+        parser: null,
         debugInfo: {
           detectedLanguage: 'en',
-          patterns: [`${parser.getRetailerName()} parser match`],
-          rejectPatterns: []
+          patterns: [],
+          rejectPatterns: ['sent email or forward detected']
         }
       }
     }
-    
-    // Extract sender domain for language override
-    const senderDomain = from.match(/@([^>]+)/)?.[1]
     
     // Detect language
     const language = detectEmailLanguage(emailText, senderDomain)
@@ -225,12 +229,13 @@ export class AIEmailClassifier {
       ...UNIVERSAL_REJECT_PATTERNS
     ]
     
-    // Check reject patterns
+    // Check reject patterns (newsletters, marketing, etc.)
     const lowerEmailText = emailText.toLowerCase()
     const foundRejectPatterns = allRejectPatterns.filter(pattern => 
       lowerEmailText.includes(pattern.toLowerCase())
     )
     
+    // If it matches reject patterns, it's definitely not an order
     if (foundRejectPatterns.length > 0) {
       return {
         isPotentialOrder: false,
@@ -246,24 +251,17 @@ export class AIEmailClassifier {
       }
     }
     
-    // Check retail patterns
-    const foundRetailPatterns = patterns.retail.filter(pattern =>
-      lowerEmailText.includes(pattern.toLowerCase())
-    )
-    
-    // Calculate confidence based on pattern matches
-    const confidence = Math.min(1.0, foundRetailPatterns.length * 0.25)
-    const isPotentialOrder = foundRetailPatterns.length > 0
-    
+    // Everything else is a potential order - let Gemini decide
+    // We no longer try to detect retailers here, Gemini will do that
     return {
-      isPotentialOrder,
-      confidence,
+      isPotentialOrder: true,
+      confidence: 0.5, // Medium confidence, let AI make final decision
       language,
-      retailer: isPotentialOrder ? 'Pending AI Analysis' : null,
-      parser: isPotentialOrder ? aiEmailParser : null,
+      retailer: 'Pending AI Analysis',
+      parser: aiEmailParser, // Always use AI parser
       debugInfo: {
         detectedLanguage: language,
-        patterns: foundRetailPatterns,
+        patterns: ['potential order - sending to AI'],
         rejectPatterns: []
       }
     }

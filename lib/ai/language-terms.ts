@@ -21,56 +21,23 @@ export interface LanguageTerms {
   }
 }
 
+// MVP: Only English and Dutch support
 export const LANGUAGE_TERMS: Record<string, LanguageTerms> = {
   nl: {
-    orderTerms: ['bestelnummer', 'ordernummer', 'order number', 'order #', 'bestelling #'],
+    orderTerms: ['bestelnummer', 'ordernummer', 'order number', 'order #', 'bestelling #', 'referentienummer', 'track & trace', 'trackingnummer', 'zendingsnummer', 'pakketcode'],
     totalTerms: ['totaal', 'totaalbedrag', 'te betalen', 'bedrag', 'prijs'],
-    deliveryTerms: ['bezorging', 'levering', 'verzending', 'verwachte leverdatum', 'afleveradres'],
+    deliveryTerms: ['bezorging', 'levering', 'verzending', 'verwachte leverdatum', 'afleveradres', 'wordt bezorgd', 'onderweg naar', 'aflevering gepland'],
     statusTerms: {
       confirmed: ['bevestigd', 'geplaatst', 'ontvangen'],
-      shipped: ['verzonden', 'verstuurd', 'onderweg', 'komt eraan'],
-      delivered: ['afgeleverd', 'bezorgd', 'geleverd', 'ontvangen']
+      shipped: ['verzonden', 'verstuurd', 'onderweg', 'komt eraan', 'in transit', 'bij de bezorger'],
+      delivered: ['afgeleverd', 'bezorgd', 'geleverd', 'ontvangen', 'afgehaald']
     },
     currencySymbols: ['EUR', '€', 'euro'],
     dateFormats: ['dd-mm-yyyy', 'dd/mm/yyyy'],
     commonPhrases: {
-      yourOrder: ['je bestelling', 'uw bestelling', 'uw order'],
+      yourOrder: ['je bestelling', 'uw bestelling', 'uw order', 'je pakket', 'uw zending'],
       thankYou: ['bedankt voor je bestelling', 'dank je wel', 'hartelijk dank'],
-      trackingInfo: ['volg je pakket', 'track & trace', 'traceer je bestelling']
-    }
-  },
-  de: {
-    orderTerms: ['bestellnummer', 'auftragsnummer', 'ordernummer', 'bestell-nr', 'order nummer'],
-    totalTerms: ['gesamtbetrag', 'summe', 'gesamt', 'zu zahlen', 'betrag', 'preis'],
-    deliveryTerms: ['lieferung', 'versand', 'zustellung', 'liefertermin', 'lieferadresse'],
-    statusTerms: {
-      confirmed: ['bestätigt', 'aufgegeben', 'erhalten'],
-      shipped: ['versendet', 'versandt', 'unterwegs', 'auf dem weg'],
-      delivered: ['geliefert', 'zugestellt', 'erhalten', 'angekommen']
-    },
-    currencySymbols: ['EUR', '€', 'euro'],
-    dateFormats: ['dd.mm.yyyy', 'dd/mm/yyyy'],
-    commonPhrases: {
-      yourOrder: ['ihre bestellung', 'deine bestellung', 'ihre order'],
-      thankYou: ['vielen dank für ihre bestellung', 'danke', 'herzlichen dank'],
-      trackingInfo: ['sendungsverfolgung', 'paket verfolgen', 'tracking']
-    }
-  },
-  fr: {
-    orderTerms: ['numéro de commande', 'n° de commande', 'référence commande', 'numéro commande'],
-    totalTerms: ['total', 'montant total', 'à payer', 'montant dû', 'prix total'],
-    deliveryTerms: ['livraison', 'expédition', 'date de livraison', 'délai', 'adresse de livraison'],
-    statusTerms: {
-      confirmed: ['confirmé', 'confirmée', 'passée', 'reçue'],
-      shipped: ['expédié', 'expédiée', 'en cours', 'envoyé'],
-      delivered: ['livré', 'livrée', 'reçu', 'arrivé']
-    },
-    currencySymbols: ['EUR', '€', 'euro'],
-    dateFormats: ['dd/mm/yyyy', 'dd-mm-yyyy'],
-    commonPhrases: {
-      yourOrder: ['votre commande', 'votre order'],
-      thankYou: ['merci pour votre commande', 'merci', 'nous vous remercions'],
-      trackingInfo: ['suivi de colis', 'suivre votre commande', 'tracking']
+      trackingInfo: ['volg je pakket', 'track & trace', 'traceer je bestelling', 'volg je zending']
     }
   },
   en: {
@@ -82,7 +49,7 @@ export const LANGUAGE_TERMS: Record<string, LanguageTerms> = {
       shipped: ['shipped', 'sent', 'on the way', 'dispatched'],
       delivered: ['delivered', 'arrived', 'received']
     },
-    currencySymbols: ['EUR', '€', 'USD', '$', 'GBP', '£'],
+    currencySymbols: ['EUR', '€'],
     dateFormats: ['mm/dd/yyyy', 'dd/mm/yyyy', 'yyyy-mm-dd'],
     commonPhrases: {
       yourOrder: ['your order', 'your purchase'],
@@ -101,38 +68,43 @@ export function getLanguageTerms(language: string): LanguageTerms {
 
 /**
  * Build language-specific examples for the AI prompt
+ * MVP: Only English and Dutch examples
  */
 export function buildLanguageExamples(language: string): string {
-  const terms = getLanguageTerms(language)
-  
   const examples: Record<string, string> = {
     nl: `
-Bijvoorbeeld:
+Voorbeelden:
 - "Bestelnummer: 123456" → orderNumber: "123456"
+- "Bestelling (90276634)" in onderwerp → orderNumber: "90276634"
 - "Totaalbedrag: €89,99" → amount: 89.99, currency: "EUR"
+- "Totaal € 85,00" → amount: 85.00, currency: "EUR"
 - "Bezorging: 15 januari" → estimatedDelivery: "2025-01-15"
-- "Je bestelling is verzonden" → status: "shipped"`,
-    
-    de: `
-Beispiel:
-- "Bestellnummer: 123456" → orderNumber: "123456"
-- "Gesamtbetrag: €89,99" → amount: 89.99, currency: "EUR"
-- "Lieferung: 15. Januar" → estimatedDelivery: "2025-01-15"
-- "Ihre Bestellung wurde versandt" → status: "shipped"`,
-    
-    fr: `
-Exemple:
-- "Numéro de commande: 123456" → orderNumber: "123456"
-- "Total: 89,99€" → amount: 89.99, currency: "EUR"
-- "Livraison: 15 janvier" → estimatedDelivery: "2025-01-15"
-- "Votre commande a été expédiée" → status: "shipped"`,
+- "Je bestelling is verzonden" → status: "shipped"
+- "Pakket is onderweg" → status: "shipped"
+- "Je bestelling is afgeleverd" → status: "delivered"
+- DHL email met "Track & Trace: 12345" → trackingNumber: "12345", carrier: "DHL"
+- PostNL zonder bedrag → amount: null, isOrder: true (nog steeds geldig!)
+- "Pakket van Coolblue" → retailer: "Coolblue"
+- "Je bestelling bij Bol.com" → retailer: "Bol.com"
+
+Let op Dutch number formats:
+- "1.234,56" → 1234.56 (duizend komma)
+- "89,99" → 89.99 (decimale komma)`,
     
     en: `
-Example:
+Examples:
 - "Order number: 123456" → orderNumber: "123456"
+- "Order #123456" in subject → orderNumber: "123456"
 - "Total: €89.99" → amount: 89.99, currency: "EUR"
+- "Order Total: $125.50" → amount: 125.50, currency: "USD"
 - "Delivery: January 15" → estimatedDelivery: "2025-01-15"
-- "Your order has been shipped" → status: "shipped"`
+- "Your order has been shipped" → status: "shipped"
+- "Package is on the way" → status: "shipped"
+- "Your order was delivered" → status: "delivered"
+- DHL email with "Tracking: 12345" → trackingNumber: "12345", carrier: "DHL"
+- UPS without amount → amount: null, isOrder: true (still valid!)
+- "Your Amazon order" → retailer: "Amazon"
+- "Thank you for shopping at Zalando" → retailer: "Zalando"`
   }
   
   return examples[language] || examples['en']

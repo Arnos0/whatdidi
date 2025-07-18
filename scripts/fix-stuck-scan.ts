@@ -48,8 +48,8 @@ async function fixStuckScan() {
     
     console.log(`- Running for: ${runningMinutes} minutes`)
     
-    // If it's been running for more than 5 minutes, mark it as failed
-    if (runningMinutes > 5) {
+    // If it's been running for more than 1 minute, mark it as failed (reduced threshold for debugging)
+    if (runningMinutes > 1) {
       console.log('Marking job as failed (exceeded 5 minute timeout)')
       
       const { error: updateError } = await supabase

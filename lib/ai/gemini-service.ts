@@ -79,7 +79,16 @@ ${emailContent.body}
         includeExamples: true
       })
 
-      const result = await this.model.generateContent(prompt)
+      // Add timeout to Gemini API call to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Gemini API timeout after 30 seconds')), 30000)
+      })
+      
+      const result = await Promise.race([
+        this.model.generateContent(prompt),
+        timeoutPromise
+      ])
+      
       const response = result.response
       const text = response.text()
       
@@ -89,6 +98,22 @@ ${emailContent.body}
       // Debug: Log the full Gemini response for orders
       if (parsedResult.isOrder) {
         console.log('Full Gemini response for order:', JSON.stringify(parsedResult, null, 2))
+        
+        // Extra logging for tracking emails
+        if (parsedResult.orderData && (parsedResult.orderData.carrier || parsedResult.orderData.tracking_number)) {
+          console.log('\n=== GEMINI TRACKING EMAIL ANALYSIS ===')
+          console.log(`Email from: ${emailContent.from}`)
+          console.log(`Subject: ${emailContent.subject}`)
+          console.log(`Detected Language: ${language}`)
+          console.log(`Extracted Retailer: "${parsedResult.orderData.retailer}"`)
+          console.log(`Carrier: ${parsedResult.orderData.carrier}`)
+          console.log(`Tracking: ${parsedResult.orderData.tracking_number}`)
+          
+          // Log a snippet of the email body to see what Gemini is working with
+          const bodySnippet = emailContent.body.substring(0, 500).replace(/\s+/g, ' ')
+          console.log(`Body snippet: ${bodySnippet}...`)
+          console.log('=== END GEMINI TRACKING ANALYSIS ===\n')
+        }
       }
       
       // Ensure we always have proper structure
@@ -138,6 +163,51 @@ ${emailContent.body}
         }
       }
       
+      // Fallback retailer detection for tracking emails
+      if (parsedResult.isOrder && parsedResult.orderData && 
+          parsedResult.orderData.carrier && 
+          parsedResult.orderData.retailer && 
+          parsedResult.orderData.retailer.includes('Unknown')) {
+        
+        console.log('Attempting fallback retailer detection for tracking email...')
+        
+        // Known retailers to search for
+        const knownRetailers = [
+          'Coolblue', 'Bol.com', 'Bol', 'Amazon', 'Zalando', 'Wehkamp', 
+          'Albert Heijn', 'AH', 'Jumbo', 'MediaMarkt', 'Decathlon', 
+          'HEMA', 'Action', 'Nike', 'Adidas', 'H&M', 'Zara'
+        ]
+        
+        // Search patterns in multiple languages
+        const searchText = emailText.toLowerCase()
+        let foundRetailer = null
+        
+        for (const retailer of knownRetailers) {
+          const retailerLower = retailer.toLowerCase()
+          
+          // Check various patterns
+          if (searchText.includes(`pakket van ${retailerLower}`) ||  // Dutch
+              searchText.includes(`bestelling bij ${retailerLower}`) ||
+              searchText.includes(`afzender: ${retailerLower}`) ||
+              searchText.includes(`paket von ${retailerLower}`) ||  // German
+              searchText.includes(`bestellung bei ${retailerLower}`) ||
+              searchText.includes(`package from ${retailerLower}`) ||  // English
+              searchText.includes(`order from ${retailerLower}`) ||
+              searchText.includes(`${retailerLower} bestelling`) ||
+              searchText.includes(`je ${retailerLower}`) ||
+              searchText.includes(`uw ${retailerLower}`)) {
+            foundRetailer = retailer
+            break
+          }
+        }
+        
+        if (foundRetailer) {
+          console.log(`Fallback detection found retailer: ${foundRetailer}`)
+          parsedResult.orderData.retailer = foundRetailer
+          parsedResult.orderData.confidence = Math.min(1.0, parsedResult.orderData.confidence + 0.1)
+        }
+      }
+      
       // Ensure language is in debug info
       if (parsedResult.debugInfo) {
         parsedResult.debugInfo.language = language
@@ -164,7 +234,16 @@ ${emailContent.body}
               context: `Previous analysis found: ${JSON.stringify(parsedResult.orderData)}`
             })
             
-            const incrementalResult = await this.model.generateContent(incrementalPrompt)
+            // Add timeout to incremental prompting as well
+            const incrementalTimeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Incremental prompting timeout after 15 seconds')), 15000)
+            })
+            
+            const incrementalResult = await Promise.race([
+              this.model.generateContent(incrementalPrompt),
+              incrementalTimeoutPromise
+            ])
+            
             const incrementalResponse = incrementalResult.response
             const incrementalText = incrementalResponse.text()
             const incrementalParsed = JSON.parse(incrementalText)
@@ -263,11 +342,18 @@ ${emailContent.body}
       })
       
       try {
-        const batchResults = await Promise.all(batchPromises)
+        // Use Promise.allSettled to handle individual failures gracefully
+        const batchResults = await Promise.allSettled(batchPromises)
         
-        // Store results
-        for (const { id, result } of batchResults) {
-          results.set(id, result)
+        // Store results, handling both fulfilled and rejected promises
+        for (const promiseResult of batchResults) {
+          if (promiseResult.status === 'fulfilled') {
+            const { id, result } = promiseResult.value
+            results.set(id, result)
+          } else {
+            console.error(`Individual email analysis failed:`, promiseResult.reason)
+            // Continue with other emails - don't fail the entire batch
+          }
         }
       } catch (error: any) {
         console.error(`Error in AI batch ${i}:`, error)

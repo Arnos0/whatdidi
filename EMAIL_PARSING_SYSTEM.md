@@ -2,19 +2,65 @@
 
 ## Overview
 
-WhatDidiShop is an automated purchase tracking system that connects to users' Gmail accounts to scan for order confirmation emails, extract purchase details, and create a centralized order database. The system uses AI (recently migrated from Claude to Gemini) to intelligently parse emails from various retailers.
+WhatDidiShop is an automated purchase tracking system with two approaches:
+- **MVP (Current)**: Email forwarding to sendto@whatdidi.shop with n8n processing
+- **Phase 2 (Future)**: Full OAuth integration with Gmail/Outlook for automatic scanning
+
+The system uses Gemini AI to intelligently parse emails from various retailers in English and Dutch.
 
 ## Table of Contents
-1. [Gmail Integration](#gmail-integration)
-2. [Email Processing Pipeline](#email-processing-pipeline)
-3. [AI Integration with Gemini](#ai-integration-with-gemini)
-4. [Current Issues & Solutions](#current-issues--solutions)
-5. [Debugging Guide](#debugging-guide)
-6. [Future Improvements](#future-improvements)
+1. [MVP: Email Forwarding Workflow](#mvp-email-forwarding-workflow)
+2. [Phase 2: Gmail Integration](#phase-2-gmail-integration)
+3. [Email Processing Pipeline](#email-processing-pipeline)
+4. [AI Integration with Gemini](#ai-integration-with-gemini)
+5. [Current Issues & Solutions](#current-issues--solutions)
+6. [Debugging Guide](#debugging-guide)
+7. [Future Improvements](#future-improvements)
 
-## Gmail Integration
+## MVP: Email Forwarding Workflow
 
-The system connects to Gmail using OAuth 2.0:
+The MVP uses a simpler approach via email forwarding:
+
+### How It Works
+1. **User Setup**: Users forward order emails to `sendto@whatdidi.shop`
+2. **n8n Processing**: IMAP polls every 5 minutes for new emails
+3. **User Verification**: Sender email checked against registered users
+4. **AI Parsing**: Gemini parses email content (en/nl only)
+5. **Data Storage**: Orders saved with `is_manual=false`
+6. **Review Flag**: Low confidence orders marked with `needs_review=true`
+7. **Notification**: User receives success/failure email
+
+### Email Forwarding Advantages
+- No OAuth complexity
+- Works with any email provider
+- User controls what to forward
+- Simpler privacy model
+- Faster MVP deployment
+
+### n8n Workflow Components
+```yaml
+Trigger: IMAP Email (every 5 minutes)
+Steps:
+  1. Fetch unread emails from sendto@whatdidi.shop
+  2. Extract sender, subject, body
+  3. Verify sender in users table
+  4. Call Gemini API for parsing
+  5. Transform parsed data
+  6. Check for existing orders
+  7. Insert/update in Supabase
+  8. Send notification email
+  9. Mark email as processed
+```
+
+### Configuration
+- IMAP server: `imap.whatdidi.shop`
+- Polling interval: 5 minutes
+- Max email size: 10MB
+- Supported languages: English, Dutch
+
+## Phase 2: Gmail Integration
+
+For Phase 2, the system will connect to Gmail using OAuth 2.0:
 - Users authenticate via Google OAuth
 - Access and refresh tokens are encrypted and stored in the database
 - The `GmailService` class handles all Gmail API interactions
@@ -109,33 +155,48 @@ We migrated from Claude to Gemini 2.0 Flash for significant improvements:
 | Rate Limits | Severe (40k tokens/min) | None |
 | Batch Size | 3 emails | 20 emails |
 
-#### The Gemini Prompt
+#### The Gemini Prompt (MVP - English/Dutch Only)
 
 ```typescript
-const prompt = `Analyze this email. If it's an order (purchase confirmation/shipping/delivery), extract:
-- orderNumber (look for: bestelnummer, ordernummer, order number, order #)
-- retailer (from sender email domain or company name)
-- amount & currency (look for: totaal, total, bedrag, EUR, €)
+const prompt = `Analyze this email in ENGLISH or DUTCH ONLY. 
+If it's an order (purchase confirmation/shipping/delivery), extract:
+
+ENGLISH terms to look for:
+- orderNumber: "order number", "order #", "reference"
+- amount: "total", "amount", "price"
+- delivery: "delivery", "shipping", "arrival"
+- status: "confirmed", "shipped", "delivered"
+
+DUTCH terms to look for:
+- orderNumber: "bestelnummer", "ordernummer", "referentie"
+- amount: "totaal", "totaalbedrag", "bedrag"
+- delivery: "bezorging", "levering", "verzending"
+- status: "bevestigd", "verzonden", "geleverd"
+
+Extract these fields:
+- orderNumber (string)
+- retailer (from sender domain)
+- amount (number - handle Dutch format: 89,99 → 89.99)
+- currency (default: "EUR")
 - orderDate (ISO format)
-- status (confirmed/shipped/delivered)
-- estimatedDelivery (look for: bezorging, levering, delivery)
+- status (map to: pending/shipped/delivered)
+- estimatedDelivery (ISO date if found)
 - trackingNumber & carrier (if present)
-- items array with name, quantity, price (if detailed)
+- items array [{name, quantity, price}] (if detailed)
 - confidence (0-1)
 
-IMPORTANT for Dutch emails:
-- "bestelnummer" = order number (may also be in subject after colon)
-- "totaal" or "totaalbedrag" = total amount
-- "bezorging" or "levering" = delivery
-- Currency is usually EUR (€)
-- For Coolblue: look for price after "€" symbol
-- If you can't find exact order details, look harder in the email body
-
 Return ONLY valid JSON:
-{"isOrder": true/false, "orderData": {...}, "debugInfo": {"language": "xx", "emailType": "..."}}
+{
+  "isOrder": boolean,
+  "orderData": {...},
+  "debugInfo": {
+    "language": "en" | "nl",
+    "confidence": 0.0-1.0
+  }
+}
 
 Email:
-${emailText.substring(0, 10000)}` // Increased from 5000 to 10000 chars
+${emailText.substring(0, 10000)}`
 ```
 
 #### Processing Flow in scan/route.ts

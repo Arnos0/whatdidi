@@ -236,9 +236,8 @@ async function processScanJob(
       // Fetch full email content
       const emails = await gmail.getMessagesBatch(messageIds)
       
-      // First, filter emails that need AI analysis
+      // Simplified: Only filter out spam, everything else goes to AI
       const emailsToAnalyze: typeof emails = []
-      const emailsWithParsers: Array<{ email: typeof emails[0], parser: any }> = []
       const emailsToSkip: typeof emails = []
       const emailClassifications = new Map<string, any>()
       
@@ -246,20 +245,16 @@ async function processScanJob(
         const classification = AIEmailClassifier.classify(email)
         emailClassifications.set(email.id, classification)
         
-        // Check if this email has a specific parser (like DHL)
-        if (classification.parser && classification.retailer && classification.retailer !== 'Pending AI Analysis') {
-          emailsWithParsers.push({ email, parser: classification.parser })
-          console.log(`Using specific parser for ${classification.retailer} email`)
-        } else if (classification.parser) {
+        if (classification.isPotentialOrder) {
           emailsToAnalyze.push(email)
         } else {
           emailsToSkip.push(email)
         }
       }
       
-      console.log(`Batch: ${emailsToAnalyze.length} emails for AI analysis, ${emailsWithParsers.length} with specific parsers, ${emailsToSkip.length} skipped`)
+      console.log(`Batch: ${emailsToAnalyze.length} emails for AI analysis, ${emailsToSkip.length} skipped (spam/newsletters)`)
       
-      // Log Coolblue emails specifically
+      // Log Coolblue emails specifically for debugging
       const coolblueEmails = emails.filter(email => {
         const { from, subject } = GmailService.extractContent(email)
         return from.toLowerCase().includes('coolblue') || subject.toLowerCase().includes('coolblue')
@@ -270,40 +265,12 @@ async function processScanJob(
           const { subject, from, date } = GmailService.extractContent(email)
           const classification = emailClassifications.get(email.id)
           console.log(`Coolblue email: "${subject}" from ${from} on ${date.toISOString()}`)
-          console.log(`  - Classification: ${classification?.parser || 'none'}, retailer: ${classification?.retailer}`)
+          console.log(`  - Classification: ${classification?.retailer}`)
           console.log(`  - Will analyze with AI: ${emailsToAnalyze.includes(email)}`)
         })
       }
       
-      // Process emails with specific parsers first
-      const parserResults = new Map<string, any>()
-      for (const { email, parser } of emailsWithParsers) {
-        try {
-          const parsedOrder = await parser.parse(email)
-          if (parsedOrder) {
-            // Log what the parser returned
-            console.log(`Parser ${parser.getRetailerName()} returned:`, {
-              order_number: parsedOrder.order_number,
-              amount: parsedOrder.amount,
-              items: parsedOrder.items?.length || 0,
-              confidence: parsedOrder.confidence
-            })
-            
-            // Don't use results with invalid order numbers
-            if (parsedOrder.order_number === "0" || parsedOrder.order_number === 0 || !parsedOrder.order_number) {
-              console.log(`WARNING: Parser ${parser.getRetailerName()} returned invalid order number: "${parsedOrder.order_number}"`)
-              // Don't add to results, let AI handle it instead
-            } else {
-              parserResults.set(email.id, parsedOrder)
-              console.log(`Parser ${parser.getRetailerName()} found valid order: ${parsedOrder.order_number}`)
-            }
-          }
-        } catch (error) {
-          console.error(`Parser ${parser.getRetailerName()} failed:`, error)
-        }
-      }
-      
-      // Process AI emails in smaller groups to avoid overwhelming the system
+      // Process all potential order emails with Gemini AI
       const aiResults = new Map<string, any>()
       if (emailsToAnalyze.length > 0) {
         const aiStartTime = Date.now()
@@ -396,123 +363,89 @@ async function processScanJob(
           // Extract email metadata early
           const { subject, from, date } = GmailService.extractContent(email)
           
-          // Check parser results first, then AI results
-          const parsedOrder = parserResults.get(email.id) || aiResults.get(email.id)
+          // Get AI analysis result for this email
+          const parsedOrder = aiResults.get(email.id)
           
           if (parsedOrder) {
-            console.log(`AI found order: ${parsedOrder.retailer} - ${parsedOrder.order_number}`)
+            console.log(`Processing order: ${parsedOrder.retailer} - ${parsedOrder.order_number}`)
             
-            if (parsedOrder && parsedOrder.confidence > 0.7) {
+            // Enhanced logging for tracking emails
+            if (parsedOrder.carrier || parsedOrder.tracking_number) {
+              console.log(`\n=== TRACKING EMAIL DEBUG ===`)
+              console.log(`From: ${from}`)
+              console.log(`Subject: ${subject}`)
+              console.log(`Carrier: ${parsedOrder.carrier}`)
+              console.log(`Tracking Number: ${parsedOrder.tracking_number}`)
+              console.log(`Extracted Retailer: "${parsedOrder.retailer}"`)
+              console.log(`Status: ${parsedOrder.status}`)
+              console.log(`Confidence: ${parsedOrder.confidence}`)
+              console.log(`=== END TRACKING DEBUG ===\n`)
+            }
+            
+            if (parsedOrder && parsedOrder.confidence >= 0.7) {
               let existingOrder = null
                 
-                // For DHL tracking emails, try to find order by tracking number
-                if (parsedOrder.retailer === 'DHL Tracking' && parsedOrder.tracking_number) {
-                  console.log(`DHL: Starting tracking lookup for ${parsedOrder.tracking_number}`)
+                // For tracking emails, try to match by tracking number first
+                const isTrackingEmail = parsedOrder.tracking_number && parsedOrder.carrier
+                
+                if (isTrackingEmail && parsedOrder.tracking_number) {
+                  // First, try to find order by tracking number
+                  const { data: trackingMatch } = await supabase
+                    .from('orders')
+                    .select('id, status, tracking_number, retailer')
+                    .eq('user_id', emailAccount.user_id)
+                    .eq('tracking_number', parsedOrder.tracking_number)
+                    .single()
                   
-                  try {
-                    // First try to find by tracking number
-                    console.log(`DHL: Querying orders table for tracking number...`)
-                    const { data, error } = await supabase
+                  if (trackingMatch) {
+                    existingOrder = trackingMatch
+                    console.log(`Found existing order by tracking number: ${parsedOrder.tracking_number}`)
+                  } else if (parsedOrder.retailer && !parsedOrder.retailer.includes('Unknown')) {
+                    // If no tracking match, try to find recent order from the same retailer
+                    const fourteenDaysAgo = new Date()
+                    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14) // Extended from 7 to 14 days
+                    
+                    const { data: recentOrders } = await supabase
                       .from('orders')
-                      .select('id')
+                      .select('id, status, tracking_number, order_date, retailer')
                       .eq('user_id', emailAccount.user_id)
-                      .eq('tracking_number', parsedOrder.tracking_number)
-                      .maybeSingle() // Use maybeSingle to handle 0 or 1 results
+                      .eq('retailer', parsedOrder.retailer)
+                      .is('tracking_number', null)
+                      .gte('order_date', fourteenDaysAgo.toISOString())
+                      .order('order_date', { ascending: false })
+                      .limit(1)
                     
-                    if (error) {
-                      console.error(`DHL: Error finding order by tracking number:`, error)
-                      throw error
+                    if (recentOrders && recentOrders.length > 0) {
+                      existingOrder = recentOrders[0]
+                      console.log(`Found recent order from ${parsedOrder.retailer} without tracking`)
                     }
+                  } else if (parsedOrder.retailer && parsedOrder.retailer.includes('Unknown')) {
+                    // Even with unknown retailer, try to find ANY recent order without tracking
+                    console.log('Retailer unknown, attempting to find any recent order without tracking...')
+                    const tenDaysAgo = new Date()
+                    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10)
                     
-                    existingOrder = data
-                    console.log(`DHL: Found existing order by tracking:`, existingOrder ? 'YES' : 'NO')
-                  } catch (error) {
-                    console.error(`DHL: Failed to query orders by tracking number:`, error)
-                    // Continue processing even if this query fails
-                  }
-                  
-                  // If not found by tracking number, try to find recent orders without tracking
-                  if (!existingOrder) {
-                    console.log(`DHL: No existing order found, searching for recent orders without tracking...`)
+                    const { data: recentOrders } = await supabase
+                      .from('orders')
+                      .select('id, status, tracking_number, order_date, retailer')
+                      .eq('user_id', emailAccount.user_id)
+                      .is('tracking_number', null)
+                      .in('status', ['confirmed', 'pending']) // Only orders that haven't shipped yet
+                      .gte('order_date', tenDaysAgo.toISOString())
+                      .order('order_date', { ascending: false })
+                      .limit(3) // Get top 3 candidates
                     
-                    try {
-                      const retailerName = parsedOrder.retailer.replace('DHL Tracking', '').trim()
-                      const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+                    if (recentOrders && recentOrders.length > 0) {
+                      // Log all candidates
+                      console.log(`Found ${recentOrders.length} candidate orders without tracking:`)
+                      recentOrders.forEach(order => {
+                        console.log(`  - ${order.retailer} from ${order.order_date} (status: ${order.status})`)
+                      })
                       
-                      console.log(`DHL: Searching for orders from ${twoWeeksAgo} onwards`)
-                      
-                      const { data: recentOrders, error: recentOrdersError } = await supabase
-                        .from('orders')
-                        .select('id, order_number, retailer')
-                        .eq('user_id', emailAccount.user_id)
-                        .is('tracking_number', null)
-                        .in('status', ['pending', 'processing', 'confirmed'])
-                        .gte('order_date', twoWeeksAgo)
-                        .order('order_date', { ascending: false })
-                        .limit(5)
-                      
-                      if (recentOrdersError) {
-                        console.error(`DHL: Error finding recent orders:`, recentOrdersError)
-                        throw recentOrdersError
-                      }
-                      
-                      console.log(`DHL: Found ${recentOrders?.length || 0} recent orders without tracking`)
-                      
-                      // Try to match by retailer name or find most recent untracked order
-                      if (recentOrders && recentOrders.length > 0) {
-                        console.log(`DHL: Attempting to match orders with retailer name: "${retailerName}"`)
-                        
-                        // Check if DHL email mentions a specific retailer
-                        if (retailerName && retailerName !== 'DHL Tracking') {
-                          existingOrder = recentOrders.find(o => 
-                            o.retailer.toLowerCase().includes(retailerName.toLowerCase())
-                          ) || recentOrders[0]
-                          console.log(`DHL: Matched by retailer name: ${existingOrder ? 'YES' : 'NO'}`)
-                        } else {
-                          // Use most recent order without tracking
-                          existingOrder = recentOrders[0]
-                          console.log(`DHL: Using most recent order without tracking`)
-                        }
-                        
-                        if (existingOrder) {
-                          console.log(`DHL: Linking tracking ${parsedOrder.tracking_number} to order ${existingOrder.order_number} from ${existingOrder.retailer}`)
-                        }
-                      }
-                    } catch (error) {
-                      console.error(`DHL: Failed to find recent orders:`, error)
-                      // Continue processing even if this query fails
+                      // Use the most recent one
+                      existingOrder = recentOrders[0]
+                      console.log(`Selected most recent: ${existingOrder.retailer}`)
                     }
-                  }
-                  
-                  // If found, update the order with tracking info and status
-                  if (existingOrder) {
-                    console.log(`DHL: Updating existing order ${existingOrder.id} with tracking info...`)
-                    
-                    try {
-                      const { error: updateError } = await supabase
-                        .from('orders')
-                        .update({
-                          status: parsedOrder.status,
-                          tracking_number: parsedOrder.tracking_number,
-                          carrier: 'DHL',
-                          estimated_delivery: parsedOrder.estimated_delivery,
-                          updated_at: new Date().toISOString()
-                        })
-                        .eq('id', existingOrder.id)
-                      
-                      if (updateError) {
-                        console.error(`DHL: Error updating order ${existingOrder.id}:`, updateError)
-                        throw updateError
-                      }
-                      
-                      orderId = existingOrder.id
-                      console.log(`DHL: Successfully updated order ${existingOrder.id} with tracking status`)
-                    } catch (error) {
-                      console.error(`DHL: Failed to update order ${existingOrder.id}:`, error)
-                      // Continue processing even if update fails
-                    }
-                  } else {
-                    console.log(`DHL: No existing order found to link tracking ${parsedOrder.tracking_number}`)
                   }
                 } else if (parsedOrder.order_number) {
                   // For regular orders, check by order number and retailer
@@ -524,6 +457,7 @@ async function processScanJob(
                     .eq('retailer', parsedOrder.retailer)
                     .single()
                   existingOrder = data
+                }
                   
                   // If found, update with new information
                   if (existingOrder) {
@@ -555,12 +489,14 @@ async function processScanJob(
                         .update(updates)
                         .eq('id', existingOrder.id)
                       
-                      console.log(`Updated existing order ${existingOrder.id} with new information`)
+                      console.log(`\n=== ORDER UPDATE SUCCESS ===`)
+                      console.log(`Updated order ${existingOrder.id} (${existingOrder.retailer})`)
+                      console.log(`Updates applied:`, JSON.stringify(updates, null, 2))
+                      console.log(`=== END UPDATE ===\n`)
                     }
                     
                     orderId = existingOrder.id
                   }
-                }
 
                 if (!existingOrder) {
                   // Only create order if we have essential data
@@ -582,12 +518,23 @@ async function processScanJob(
                     parsedOrder.order_number = ""
                   }
                   
-                  if (!parsedOrder.amount || parsedOrder.amount <= 0) {
-                    console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount})`)
+                  // Allow null amounts for tracking/shipping emails
+                  const isTrackingEmail = parsedOrder.status === 'shipped' || parsedOrder.status === 'delivered' || 
+                                         parsedOrder.tracking_number || parsedOrder.carrier
+                  
+                  if (!parsedOrder.amount && !isTrackingEmail) {
+                    console.log(`Skipping order creation - invalid amount: ${parsedOrder.amount} (type: ${typeof parsedOrder.amount}) and not a tracking email`)
                     parseError = 'Missing essential order data'
-                  } else if (!parsedOrder.order_number && !isCoolblue) {
-                    console.log(`Skipping order creation - missing order number for ${parsedOrder.retailer}`)
+                  } else if (parsedOrder.amount && parsedOrder.amount < 0) {
+                    console.log(`Skipping order creation - negative amount: ${parsedOrder.amount}`)
+                    parseError = 'Invalid amount value'
+                  } else if (!parsedOrder.order_number && !isCoolblue && !isTrackingEmail) {
+                    console.log(`Skipping order creation - missing order number for ${parsedOrder.retailer} and not a tracking email`)
                     parseError = 'Missing essential order data'
+                  } else if (parsedOrder.retailer && (parsedOrder.retailer === 'DHL' || parsedOrder.retailer === 'PostNL' || 
+                           parsedOrder.retailer === 'UPS' || parsedOrder.retailer === 'DPD' || parsedOrder.retailer === 'FedEx')) {
+                    console.log(`Skipping order creation - carrier ${parsedOrder.retailer} should not be used as retailer`)
+                    parseError = 'Carrier used as retailer'
                   } else {
                     // Generate order number for Coolblue if missing
                     if (!parsedOrder.order_number && isCoolblue) {
@@ -601,8 +548,8 @@ async function processScanJob(
                         user_id: emailAccount.user_id,
                         order_number: parsedOrder.order_number,
                         retailer: parsedOrder.retailer,
-                        amount: parsedOrder.amount,
-                        currency: parsedOrder.currency,
+                        amount: parsedOrder.amount || null, // Allow null for tracking emails
+                        currency: parsedOrder.currency || 'EUR',
                         order_date: parsedOrder.order_date,
                         status: parsedOrder.status || 'pending',
                         estimated_delivery: parsedOrder.estimated_delivery,
@@ -662,12 +609,12 @@ async function processScanJob(
                     }
                   }
                 }
-              } else {
-                console.log(`Low confidence order skipped: ${parsedOrder.retailer} - confidence: ${parsedOrder.confidence}`)
-              }
             } else {
-              console.log(`Email not detected as order: ${email.id}`)
+              console.log(`Low confidence order skipped: ${parsedOrder.retailer} - confidence: ${parsedOrder.confidence}`)
             }
+          } else {
+            console.log(`Email not detected as order: ${email.id}`)
+          }
 
           // Record processed email (should be outside the parsedOrder check)
           // (email metadata already extracted above)

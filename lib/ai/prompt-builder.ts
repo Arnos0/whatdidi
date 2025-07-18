@@ -2,7 +2,7 @@ import { getLanguageTerms, buildLanguageExamples } from './language-terms'
 
 /**
  * Dynamic prompt builder for multilingual email analysis
- * Generates language-specific prompts for better AI extraction
+ * MVP: Simplified for English and Dutch only
  */
 
 export interface PromptOptions {
@@ -29,11 +29,56 @@ export function buildMultilingualPrompt(options: PromptOptions): string {
   const truncatedEmail = emailText.substring(0, maxLength)
   const truncationNote = emailText.length > maxLength ? '... [truncated]' : ''
   
-  const prompt = `Analyze this email. If it's an order (purchase confirmation/shipping/delivery), extract:
+  const prompt = `Analyze this email and determine if it's related to a purchase/order/delivery.
 
+IMPORTANT: The following emails ARE valid orders:
+- Purchase confirmations from retailers
+- Shipping notifications from carriers (DHL, PostNL, UPS, etc.)
+- Tracking updates and delivery notifications
+- Order status updates
+- Ticket purchases (concerts, sports, transport)
+- Digital purchases and subscriptions
+- Hotel/travel booking confirmations
+
+IMPORTANT: The following emails are NOT orders (return isOrder=false):
+- Promotional emails advertising sales, discounts, or savings
+- Marketing campaigns with offers, deals, or "limited time" promotions
+- Newsletters (even if from retailers)
+- Hotel/travel promotional offers without booking details
+- Emails with subject lines containing: "sale", "savings", "discount", "offer", "deal"
+- Any email focused on getting you to make a purchase rather than confirming one
+- Sent emails or copies of emails you sent (check if sender email matches recipient domain)
+- Forwarded emails from your own company/domain
+- Email copies in "Sent Items" folder
+
+Extract the following information:
 ${fieldDescriptions}
 
 ${instructions}
+
+SPECIAL INSTRUCTIONS:
+1. For shipping/tracking emails (DHL, PostNL, etc.):
+   - The "retailer" should be the original merchant, NOT the carrier
+   - Look for retailer info in: sender name, email body, package description
+   - Common patterns to find retailer:
+     * Dutch: "Pakket van [RETAILER]", "bestelling bij [RETAILER]", "Afzender: [RETAILER]"
+     * English: "Package from [RETAILER]", "Your [RETAILER] order", "Sender: [RETAILER]"
+   - Check email body for mentions of known retailers: Coolblue, Bol.com, Amazon, Zalando, etc.
+   - Look for "Je Coolblue bestelling", "Uw bestelling bij", "Your order from"
+   - If retailer cannot be determined, set retailer as "Unknown (via [CARRIER])"
+   - NEVER use just the carrier name as retailer
+   - Extract tracking number and carrier name
+
+2. For emails without clear order numbers:
+   - Check subject line for numbers in parentheses
+   - Look for reference numbers, booking codes, confirmation codes
+   - Any long number sequence could be an order number
+
+3. For amount extraction:
+   - Handle Dutch number format: "89,99" → 89.99, "1.234,56" → 1234.56
+   - If no total amount, look for item prices
+   - For tickets/events, any price mentioned is the amount
+   - For tracking-only emails, amount can be null but still mark as order
 
 ${examples}
 
@@ -58,26 +103,6 @@ function buildFieldDescriptions(language: string, terms: any): string {
 - items array met name, quantity, price (indien gedetailleerd)
 - confidence (0-1)`,
     
-    de: `- orderNumber (suche nach: ${terms.orderTerms.join(', ')})
-- retailer (aus Absender-Domain oder Firmenname)
-- amount & currency (suche nach: ${terms.totalTerms.join(', ')}, ${terms.currencySymbols.join(', ')})
-- orderDate (ISO-Format)
-- status (confirmed/shipped/delivered)
-- estimatedDelivery (suche nach: ${terms.deliveryTerms.join(', ')})
-- trackingNumber & carrier (falls vorhanden)
-- items Array mit name, quantity, price (falls detailliert)
-- confidence (0-1)`,
-    
-    fr: `- orderNumber (cherchez: ${terms.orderTerms.join(', ')})
-- retailer (du domaine expéditeur ou nom de l'entreprise)
-- amount & currency (cherchez: ${terms.totalTerms.join(', ')}, ${terms.currencySymbols.join(', ')})
-- orderDate (format ISO)
-- status (confirmed/shipped/delivered)
-- estimatedDelivery (cherchez: ${terms.deliveryTerms.join(', ')})
-- trackingNumber & carrier (si présent)
-- items array avec name, quantity, price (si détaillé)
-- confidence (0-1)`,
-    
     en: `- orderNumber (look for: ${terms.orderTerms.join(', ')})
 - retailer (from sender email domain or company name)
 - amount & currency (look for: ${terms.totalTerms.join(', ')}, ${terms.currencySymbols.join(', ')})
@@ -99,32 +124,22 @@ function buildLanguageInstructions(language: string, terms: any): string {
 - ${terms.totalTerms.join(' of ')} = totaalbedrag
 - ${terms.deliveryTerms.join(' of ')} = bezorging
 - Valuta is meestal EUR (€)
-- Voor Coolblue: zoek naar prijs na "€" symbool
-- Nederlands nummerformaat: 89,99 → 89.99
-- Als je geen exacte bestelgegevens kunt vinden, zoek harder in de emailtekst`,
-    
-    de: `WICHTIG für deutsche E-Mails:
-- Suche nach ${terms.orderTerms.join(' oder ')} für Bestellnummer (kann auch im Betreff nach Doppelpunkt stehen)
-- ${terms.totalTerms.join(' oder ')} = Gesamtbetrag
-- ${terms.deliveryTerms.join(' oder ')} = Lieferung
-- Währung ist meist EUR (€)
-- Deutsches Zahlenformat: 89,99 → 89.99
-- Wenn Sie keine genauen Bestelldetails finden können, suchen Sie intensiver im E-Mail-Text`,
-    
-    fr: `IMPORTANT pour les emails français:
-- Cherchez ${terms.orderTerms.join(' ou ')} pour le numéro de commande (peut aussi être dans le sujet après deux-points)
-- ${terms.totalTerms.join(' ou ')} = montant total
-- ${terms.deliveryTerms.join(' ou ')} = livraison
-- La devise est généralement EUR (€)
-- Format de nombre français: 89,99 → 89.99
-- Si vous ne trouvez pas les détails exacts de la commande, cherchez plus attentivement dans le texte de l'email`,
+- Voor Coolblue: zoek naar prijs na "€" symbool EN bestelnummer in onderwerp tussen haakjes
+- Voor DHL/PostNL: dit zijn GELDIGE bestellingen, zoek naar afzender/retailer info in email
+- Nederlands nummerformaat: 89,99 → 89.99 of 1.234,56 → 1234.56
+- Track & Trace codes zijn ook geldige ordernummers
+- Als geen bedrag gevonden voor verzending-only emails: amount mag null zijn
+- ALTIJD isOrder=true voor bezorg/tracking emails`,
     
     en: `IMPORTANT for English emails:
 - Look for ${terms.orderTerms.join(' or ')} for order number (may also be in subject after colon)
 - ${terms.totalTerms.join(' or ')} = total amount
 - ${terms.deliveryTerms.join(' or ')} = delivery
-- Currency is usually EUR (€) or USD ($)
-- If you can't find exact order details, look harder in the email body`
+- Currency is usually EUR (€) but could be other
+- For DHL/UPS/FedEx: These ARE valid orders, look for merchant info in email
+- Tracking numbers are valid order numbers
+- If no amount found for shipping-only emails: amount can be null
+- ALWAYS isOrder=true for delivery/tracking emails`
   }
   
   return instructions[language] || instructions['en']
@@ -144,10 +159,8 @@ export function buildIncrementalPrompt(options: {
   const terms = getLanguageTerms(language)
   
   const fieldInstructions = {
-    nl: `Zoek specifiek naar deze ontbrekende velden in deze ${language.toUpperCase()} email:`,
-    de: `Suchen Sie spezifisch nach diesen fehlenden Feldern in dieser ${language.toUpperCase()} E-Mail:`,
-    fr: `Cherchez spécifiquement ces champs manquants dans cet email ${language.toUpperCase()}:`,
-    en: `Look specifically for these missing fields in this ${language.toUpperCase()} email:`
+    nl: `Zoek specifiek naar deze ontbrekende velden in deze Nederlandse email:`,
+    en: `Look specifically for these missing fields in this English email:`
   }
   
   const fieldMappings: Record<string, string> = {
@@ -174,4 +187,41 @@ Email excerpt:
 ${emailText.substring(0, 5000)}`
 
   return prompt
+}
+
+/**
+ * Build a focused MVP prompt for English and Dutch emails
+ * This is optimized for n8n email forwarding workflow
+ */
+export function buildMVPPrompt(emailText: string, detectedLanguage: string = 'en'): string {
+  // Force language to be either 'en' or 'nl'
+  const language = (detectedLanguage === 'nl') ? 'nl' : 'en'
+  
+  // Add specific instructions for MVP processing
+  const mvpInstructions = language === 'nl' ? `
+EXTRA MVP INSTRUCTIES:
+- Nederlands gebruikt komma's voor decimalen: €89,99 = 89.99
+- Nederlands gebruikt punten voor duizendtallen: €1.234,56 = 1234.56
+- ALTIJD getallen converteren naar Engels formaat in JSON response
+- Als confidence < 0.7, wordt needs_review=true gezet
+- Voor handmatige invoer via n8n: is_manual=true` : `
+EXTRA MVP INSTRUCTIONS:
+- English uses dots for decimals: $89.99 = 89.99
+- English uses commas for thousands: $1,234.56 = 1234.56
+- Always return numbers in standard format (dots for decimals)
+- If confidence < 0.7, needs_review will be set to true
+- For manual entry via n8n: is_manual=true`
+
+  const basePrompt = buildMultilingualPrompt({
+    language,
+    emailText,
+    maxLength: 10000,
+    includeExamples: true
+  })
+  
+  // Insert MVP instructions before the JSON return instruction
+  return basePrompt.replace(
+    'Return ONLY valid JSON:',
+    mvpInstructions + '\n\nReturn ONLY valid JSON:'
+  )
 }

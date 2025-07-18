@@ -167,15 +167,22 @@ Mark these files with `import 'server-only'` at the top.
 ## 1. PROJECT OVERVIEW
 
 ### App Name and Purpose
-**WhatDidiShop** is a purchase tracking web application that helps users centralize and monitor all their online purchases in one place. It automatically scans email accounts for order confirmations, tracks deliveries, and provides spending insights.
+**WhatDidiShop** is a purchase tracking web application that helps users centralize and monitor all their online purchases in one place. The MVP uses n8n for data ingestion (manual order entry and email forwarding), with full email OAuth scanning planned for Phase 2.
 
-### Key Features
-- Automatic email scanning for order confirmations
-- Real-time delivery tracking
-- Spending analytics and insights
-- Manual order entry with receipt upload
+### Key Features - MVP
+- Manual order entry via n8n form
+- Email forwarding with AI parsing (sendto@whatdidi.shop)
+- Order tracking and management
+- Spending analytics (English and Dutch only)
 - Multi-retailer support (Bol.com, Coolblue, Zalando, Amazon)
-- Multi-carrier tracking (PostNL, DHL, DPD)
+- Order review for low-confidence parsing
+
+### Key Features - Phase 2 (Future)
+- Full Gmail/Outlook OAuth integration
+- Automatic email scanning
+- Multi-language support (de/fr)
+- Advanced delivery tracking
+- Bulk import capabilities
 
 ### Target Audience
 - Online shoppers who make frequent purchases
@@ -187,10 +194,12 @@ Mark these files with `import 'server-only'` at the top.
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Authentication**: Clerk (Google & Microsoft OAuth)
 - **Database**: Supabase (PostgreSQL)
+- **Workflow Automation**: n8n Cloud (manual entry + email forwarding)
+- **AI Parsing**: Gemini 2.0 Flash (en/nl support)
 - **State Management**: React Query (TanStack Query)
 - **Forms**: React Hook Form with Zod validation
 - **Deployment**: Vercel
-- **Email Integration**: Gmail API, Microsoft Graph API
+- **Email Integration**: IMAP forwarding (MVP), Gmail/Outlook API (Phase 2)
 - **Error Tracking**: Sentry
 
 ## 2. GETTING STARTED
@@ -240,12 +249,19 @@ NEXT_PUBLIC_SUPABASE_URL=https://[project-id].supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# Google OAuth (for Gmail)
+# n8n Integration (MVP)
+N8N_WEBHOOK_TOKEN=... # Secure token for webhook authentication
+N8N_WEBHOOK_URL=https://n8n.whatdidi.shop/webhook
+
+# Gemini AI (MVP)
+GEMINI_API_KEY=... # For email parsing
+
+# Google OAuth (Phase 2 - Keep for future)
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
 
-# Microsoft OAuth (for Outlook)
+# Microsoft OAuth (Phase 2 - Keep for future)
 MICROSOFT_CLIENT_ID=...
 MICROSOFT_CLIENT_SECRET=...
 MICROSOFT_REDIRECT_URI=http://localhost:3000/api/auth/microsoft/callback
@@ -253,7 +269,7 @@ MICROSOFT_REDIRECT_URI=http://localhost:3000/api/auth/microsoft/callback
 # Sentry
 NEXT_PUBLIC_SENTRY_DSN=https://...
 
-# Carrier APIs
+# Carrier APIs (Phase 2)
 POSTNL_API_KEY=...
 DHL_API_KEY=...
 DPD_API_KEY=...
@@ -273,13 +289,24 @@ DPD_API_KEY=...
 4. Run the SQL migrations in `/supabase/migrations`
 5. Enable Row Level Security (RLS) policies
 
+### How to Set Up n8n (MVP Priority)
+1. Set up n8n cloud account at https://n8n.io
+2. Create two workflows:
+   - Manual Order Entry Form
+   - Email Forwarding Processor
+3. Configure webhook URLs in environment variables
+4. Set up IMAP access for sendto@whatdidi.shop
+5. Test webhook authentication with secure token
+6. Configure Gemini API integration in n8n
+
 ### First-time Setup Instructions
 1. Install dependencies and set up environment variables
 2. Run Supabase migrations to create database schema
 3. Configure Clerk authentication providers
-4. Set up OAuth credentials for email providers
-5. Configure carrier API keys for tracking
+4. Set up n8n workflows for MVP (manual entry + email forwarding)
+5. Configure Gemini API key for email parsing
 6. Run the development server and test authentication
+7. Test n8n webhook integration
 
 ## 3. PROJECT STRUCTURE
 
@@ -438,7 +465,35 @@ These scripts run the server in the background without timeout issues.
 4. **Error Handling**: Return generic error messages to clients
 5. **Rate Limiting**: Consider implementing for resource-intensive endpoints
 
-### Authentication Endpoints
+### n8n Webhook Endpoints (MVP)
+```typescript
+// n8n webhook for manual order creation
+POST /api/webhooks/n8n/manual-order
+Headers: {
+  'x-webhook-token': 'YOUR_SECURE_TOKEN'
+}
+Body: {
+  user_email: string,
+  retailer: string,
+  amount: number,
+  order_date: string,
+  // ... other order fields
+}
+
+// n8n webhook for email parsing results
+POST /api/webhooks/n8n/email-parsed
+Headers: {
+  'x-webhook-token': 'YOUR_SECURE_TOKEN'
+}
+Body: {
+  sender_email: string,
+  parsed_order: OrderData | null,
+  confidence: number,
+  needs_review: boolean
+}
+```
+
+### Authentication Endpoints (Phase 2)
 ```typescript
 // OAuth callback endpoints
 GET /api/auth/google/callback
@@ -712,26 +767,36 @@ NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
 ### Current Features
 - ✅ User authentication with Clerk
 - ✅ Basic project structure
-- ⏳ Email OAuth integration
-- ⏳ Order management CRUD
-- ⏳ Email parsing for major retailers
-- ⏳ Delivery tracking integration
+- ✅ Database schema with order tracking
+- ✅ Gemini AI integration for parsing
+- ⏳ n8n workflow integration
+- ⏳ Manual order entry form
+- ⏳ Email forwarding setup
+
+### MVP Features (In Progress)
+**Phase 1 - n8n Integration**
+- Manual order entry via n8n form
+- Email forwarding to sendto@whatdidi.shop
+- AI parsing (English and Dutch only)
+- Order review for low-confidence parsing
+- Basic spending statistics
+- Order source tracking (manual/email)
 
 ### Planned Features
-**Phase 1 (MVP)**
-- Email scanning and parsing
-- Manual order entry
-- Basic delivery tracking
-- Simple spending statistics
+**Phase 2 - Full Email Integration**
+- Gmail OAuth scanning
+- Outlook OAuth scanning
+- Automatic email scanning (15 min intervals)
+- Batch processing of historical emails
+- Multi-language support (add de/fr)
+- Advanced delivery tracking
 
-**Phase 2 (Enhanced)**
+**Phase 3 - Enhanced Features**
 - Real-time tracking updates
 - Advanced filtering and search
 - Export functionality (CSV, PDF)
 - Email notifications
 - Dark mode support
-
-**Phase 3 (Advanced)**
 - Mobile app (React Native)
 - Browser extension for order capture
 - Price drop alerts

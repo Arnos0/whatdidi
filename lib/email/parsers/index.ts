@@ -1,27 +1,19 @@
 import { ParserRegistry } from './parser-registry'
-import { BolParser } from './retailers/bol-parser'
-import { CoolblueParser } from './retailers/coolblue-parser'
-import { ZalandoParser } from './retailers/zalando-parser'
-import { DHLParser } from './retailers/dhl-parser'
 
 /**
  * Register all available parsers
  * This should be called once when the application starts
+ * 
+ * UPDATE: We've removed all retailer-specific parsers in favor of
+ * using Gemini AI for all email parsing. This provides better
+ * accuracy and maintainability.
  */
 export function registerParsers() {
   // Clear any existing parsers
   ParserRegistry.clear()
   
-  // Register all retailer parsers
-  ParserRegistry.register(new BolParser())
-  ParserRegistry.register(new CoolblueParser())
-  ParserRegistry.register(new ZalandoParser())
-  ParserRegistry.register(new DHLParser())
-  
-  // TODO: Add more parsers as they are implemented
-  // ParserRegistry.register(new AmazonParser())
-  // ParserRegistry.register(new MediaMarktParser())
-  // ParserRegistry.register(new AlbertHeijnParser())
+  // No longer registering retailer-specific parsers
+  // All email parsing is now handled by Gemini AI
 }
 
 // Export commonly used classes
