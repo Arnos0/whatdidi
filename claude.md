@@ -1,8 +1,33 @@
 # WhatDidiShop - Development Documentation
 
-## 🚨 CRITICAL: THIS PROJECT RUNS ON PORT 3002 - NOT 3000! 🚨
-**ALWAYS USE: `./start-dev.sh` or `PORT=3002 npm run dev`**
-**ACCESS AT: http://localhost:3002**
+# ⚠️⚠️⚠️ CLAUDE: READ THIS FIRST! ⚠️⚠️⚠️
+
+## 🚨🚨🚨 CRITICAL PORT REQUIREMENT 🚨🚨🚨
+
+**THIS PROJECT RUNS ON PORT 3002 - NEVER 3000!**
+
+### ✅ CORRECT COMMANDS TO USE:
+```bash
+./start-dev.sh           # PREFERRED: No timeout issues
+npm run dev              # NOW DEFAULTS TO PORT 3002
+PORT=3002 npm run dev    # EXPLICIT PORT
+```
+
+### ❌ NEVER USE THESE COMMANDS:
+```bash
+npm run dev:original     # Uses port 3000 - WRONG!
+next dev                 # Uses port 3000 - WRONG!
+```
+
+### 🎯 ALWAYS ACCESS AT:
+**http://localhost:3002** (NOT 3000!)
+
+**Why port 3002?**
+- Port 3000 conflicts with other services
+- Application is configured for 3002
+- All OAuth redirects expect 3002
+
+---
 
 ## 📧 EMAIL PARSING SYSTEM
 **IMPORTANT**: For detailed information about the email parsing system, AI integration, and debugging, see:

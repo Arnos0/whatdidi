@@ -19,11 +19,7 @@ export function DashboardActions() {
   )
 }
 
-interface EmptyStateActionsProps {
-  onAddManualOrder: () => void
-}
-
-export function EmptyStateActions({ onAddManualOrder }: EmptyStateActionsProps) {
+export function EmptyStateActions() {
   return (
     <div className="flex flex-col sm:flex-row gap-3 justify-center">
       <ManualOrderButton 

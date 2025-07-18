@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:3002": "PORT=3002 next dev",
+    "dev": "PORT=3002 next dev",
+    "dev:original": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "_reminder": "⚠️ ALWAYS USE PORT 3002! Run: ./start-dev.sh or npm run dev:3002"
+    "_reminder": "✅ npm run dev now uses PORT=3002 automatically! Alternative: ./start-dev.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.56.0",

@@ -6,6 +6,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { OrderStatusBadge } from '@/components/orders/order-status-badge'
+import { OrderSourceIndicator } from '@/components/orders/order-source-indicator'
+import { formatDutchCurrency } from '@/lib/utils/currency-formatter'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -110,6 +113,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                   <th className="px-6 py-3">Retailer</th>
                   <th className="px-6 py-3">Amount</th>
                   <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Source</th>
                   <th className="px-6 py-3">Date</th>
                   <th className="px-6 py-3">Tracking</th>
                   <th className="px-6 py-3 w-10"></th>
@@ -131,13 +135,16 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                         {order.retailer}
                       </td>
                       <td className="px-6 py-4">
-                        {order.currency} {order.amount.toFixed(2)}
+                        {formatDutchCurrency(order.amount)}
                       </td>
                       <td className="px-6 py-4">
-                        <Badge variant={statusInfo.variant} className="gap-1">
-                          {statusInfo.icon}
-                          {statusInfo.label}
-                        </Badge>
+                        <OrderStatusBadge status={order.status as OrderStatus} language="en" />
+                      </td>
+                      <td className="px-6 py-4">
+                        <OrderSourceIndicator 
+                          isManual={order.is_manual || false} 
+                          needsReview={order.needs_review || false}
+                        />
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
@@ -193,10 +200,12 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                     <div className="text-sm text-muted-foreground">{order.retailer}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={statusInfo.variant} className="gap-1">
-                      {statusInfo.icon}
-                      {statusInfo.label}
-                    </Badge>
+                    <OrderSourceIndicator 
+                      isManual={order.is_manual || false} 
+                      needsReview={order.needs_review || false}
+                      className="text-xs"
+                    />
+                    <OrderStatusBadge status={order.status as OrderStatus} language="en" />
                     <Button
                       variant="ghost"
                       size="icon"
@@ -210,7 +219,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                 
                 <div className="flex justify-between items-center">
                   <div className="text-lg font-semibold">
-                    {order.currency} {order.amount.toFixed(2)}
+                    {formatDutchCurrency(order.amount)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {new Date(order.order_date).toLocaleDateString()}

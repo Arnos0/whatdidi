@@ -16,8 +16,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Debug logging
+    console.log('🔍 Orders API Debug:')
+    console.log(`  Clerk ID: ${clerkId}`)
+
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
+    console.log(`  Database User: ${user ? `${user.id} (${user.email})` : 'NOT FOUND'}`)
+    
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -51,6 +57,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get orders with all filters applied at database level
+    console.log(`  Querying orders for user ID: ${user.id}`)
     const { orders, total } = await serverOrderQueries.getByUserIdWithFilters(user.id, {
       status,
       search,
@@ -59,6 +66,8 @@ export async function GET(request: NextRequest) {
       limit,
       offset
     })
+
+    console.log(`  Found ${orders?.length || 0} orders (total: ${total})`)
 
     return NextResponse.json({
       orders,
