@@ -147,7 +147,7 @@ export class CoolblueMultilingualParser implements RetailerParser {
         ]
       }
       
-      const amountPatternsForLang = amountPatterns[language] || amountPatterns['en']
+      const amountPatternsForLang = amountPatterns[language as keyof typeof amountPatterns] || amountPatterns['en']
       for (const pattern of amountPatternsForLang) {
         const match = emailText.match(pattern)
         if (match) {
@@ -246,7 +246,7 @@ export class CoolblueMultilingualParser implements RetailerParser {
         }
       }
       
-      const statusPatternsForLang = statusPatterns[language] || statusPatterns['en']
+      const statusPatternsForLang = statusPatterns[language as keyof typeof statusPatterns] || statusPatterns['en']
       const emailTextLower = emailText.toLowerCase()
       
       if (statusPatternsForLang.delivered.some(term => emailTextLower.includes(term))) {
@@ -418,7 +418,7 @@ export class AmazonMultilingualParser implements RetailerParser {
         ]
       }
       
-      const amountPatternsForLang = amountPatterns[language] || amountPatterns['en']
+      const amountPatternsForLang = amountPatterns[language as keyof typeof amountPatterns] || amountPatterns['en']
       for (const pattern of amountPatternsForLang) {
         const match = emailText.match(pattern)
         if (match) {
@@ -494,7 +494,7 @@ export class AmazonMultilingualParser implements RetailerParser {
         }
       }
       
-      const statusPatternsForLang = statusPatterns[language] || statusPatterns['en']
+      const statusPatternsForLang = statusPatterns[language as keyof typeof statusPatterns] || statusPatterns['en']
       const emailTextLower = emailText.toLowerCase()
       
       if (statusPatternsForLang.delivered.some(term => emailTextLower.includes(term))) {
@@ -569,7 +569,7 @@ export async function parseByRetailer(
   }
   
   const retailerKey = retailer.toLowerCase()
-  const parser = retailerParsers[retailerKey]
+  const parser = retailerParsers[retailerKey as keyof typeof retailerParsers]
   
   if (!parser) {
     return {
@@ -728,7 +728,7 @@ export class ZalandoMultilingualParser implements RetailerParser {
         ]
       }
       
-      const amountPatternsForLang = amountPatterns[language] || amountPatterns['en']
+      const amountPatternsForLang = amountPatterns[language as keyof typeof amountPatterns] || amountPatterns['en']
       for (const pattern of amountPatternsForLang) {
         const match = emailText.match(pattern)
         if (match) {
@@ -835,7 +835,7 @@ export class ZalandoMultilingualParser implements RetailerParser {
         }
       }
       
-      const statusPatternsForLang = statusPatterns[language] || statusPatterns['en']
+      const statusPatternsForLang = statusPatterns[language as keyof typeof statusPatterns] || statusPatterns['en']
       const emailTextLower = emailText.toLowerCase()
       
       if (statusPatternsForLang.delivered.some(term => emailTextLower.includes(term))) {
@@ -845,7 +845,7 @@ export class ZalandoMultilingualParser implements RetailerParser {
         order.status = 'shipped'
         debugInfo.fieldsExtracted.push('status:shipped')
       } else if (statusPatternsForLang.returned.some(term => emailTextLower.includes(term))) {
-        order.status = 'returned'
+        order.status = 'delivered'
         debugInfo.fieldsExtracted.push('status:returned')
       } else if (statusPatternsForLang.confirmed.some(term => emailTextLower.includes(term))) {
         order.status = 'confirmed'

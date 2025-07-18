@@ -223,7 +223,7 @@ async function handleManualOrder(
 async function handleEmailOrder(
   supabase: any,
   userId: string,
-  payload: EmailPayload
+  payload: EmailOrderPayload
 ) {
   const { email } = payload
 

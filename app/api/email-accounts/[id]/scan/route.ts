@@ -490,7 +490,7 @@ async function processScanJob(
                         .eq('id', existingOrder.id)
                       
                       console.log(`\n=== ORDER UPDATE SUCCESS ===`)
-                      console.log(`Updated order ${existingOrder.id} (${existingOrder.retailer})`)
+                      console.log(`Updated order ${existingOrder.id}`)
                       console.log(`Updates applied:`, JSON.stringify(updates, null, 2))
                       console.log(`=== END UPDATE ===\n`)
                     }

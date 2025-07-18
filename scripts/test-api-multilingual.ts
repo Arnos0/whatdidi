@@ -93,7 +93,7 @@ async function testMultilingualEndpoints() {
         console.log(`❌ API request failed (${response.status})`)
       }
     } catch (error) {
-      console.log(`❌ Network error: ${error.message}`)
+      console.log(`❌ Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 }
@@ -124,7 +124,7 @@ async function testRetailerDetection() {
       console.log(`❌ Retailers API failed (${response.status})`)
     }
   } catch (error) {
-    console.log(`❌ Retailers API error: ${error.message}`)
+    console.log(`❌ Retailers API error: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

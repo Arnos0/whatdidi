@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { EmailAccountsList } from '@/components/settings/email-accounts-list'
+import { EmailForwardingGuide } from '@/components/settings/email-forwarding-guide'
 import { toast } from 'sonner'
 
 // OAuth environment configured for production
@@ -44,7 +45,8 @@ export default function SettingsPage() {
         breadcrumbs={breadcrumbs}
       />
       
-      <div className="mx-4 sm:mx-0">
+      <div className="mx-4 sm:mx-0 space-y-6">
+        <EmailForwardingGuide />
         <EmailAccountsList />
       </div>
     </div>

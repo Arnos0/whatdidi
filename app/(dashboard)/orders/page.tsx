@@ -23,6 +23,7 @@ import { OrderFilters } from '@/components/orders/order-filters'
 import { Pagination } from '@/components/ui/pagination'
 import { useOrders, useCreateOrder, useResetOrders } from '@/hooks/use-orders'
 import { CreateOrderDialog } from '@/components/orders/create-order-dialog'
+import { ManualOrderButton } from '@/components/orders/manual-order-button'
 
 export default function OrdersPage() {
   const router = useRouter()
@@ -89,6 +90,7 @@ export default function OrdersPage() {
               <Plus className="h-4 w-4 mr-2" />
               Add Order
             </Button>
+            <ManualOrderButton variant="outline" size="sm" />
           </div>
         }
       />
