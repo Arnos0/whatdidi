@@ -184,17 +184,17 @@ export function OrderDetail({ order, onBack, onUpdate, isUpdating = false }: Ord
             {order.order_items.length === 0 ? (
               <p className="text-sm text-muted-foreground">No items found for this order.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {order.order_items.map((item, index) => (
-                  <div key={item.id || index} className="flex justify-between items-start p-4 border rounded-lg">
+                  <div key={item.id || index} className="flex justify-between items-start p-3 border rounded-lg bg-muted/20">
                     <div className="flex-1">
-                      <h3 className="font-medium">{item.description}</h3>
-                      <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
+                      <p className="text-sm font-medium text-foreground">{item.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Quantity: {item.quantity}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">{order.currency} {(item.price || 0).toFixed(2)}</p>
+                      <p className="text-sm font-medium">{order.currency} {(item.price || 0).toFixed(2)}</p>
                       {item.quantity > 1 && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {order.currency} {((item.price || 0) * item.quantity).toFixed(2)} total
                         </p>
                       )}
