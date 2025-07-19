@@ -26,10 +26,10 @@ let WEBHOOK_SECRET: string | undefined
 
 function getWebhookConfig() {
   if (WEBHOOK_TOKEN === undefined) {
-    WEBHOOK_TOKEN = process.env.N8N_WEBHOOK_TOKEN || null
+    WEBHOOK_TOKEN = process.env.N8N_WEBHOOK_TOKEN || undefined
   }
   if (WEBHOOK_SECRET === undefined) {
-    WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || null
+    WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || undefined
   }
   return { WEBHOOK_TOKEN, WEBHOOK_SECRET }
 }
