@@ -48,8 +48,18 @@ async function createTestAccount() {
       console.log('User already exists, using existing user ID:', userId)
       
       // Clean up existing data
-      await supabase.from('order_items').delete().eq('order_id', 'IN (SELECT id FROM orders WHERE user_id = $1)', userId)
-      await supabase.from('deliveries').delete().eq('order_id', 'IN (SELECT id FROM orders WHERE user_id = $1)', userId)
+      // First get all order IDs for this user
+      const { data: existingOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('user_id', userId)
+      
+      if (existingOrders && existingOrders.length > 0) {
+        const orderIds = existingOrders.map(o => o.id)
+        await supabase.from('order_items').delete().in('order_id', orderIds)
+        await supabase.from('deliveries').delete().in('order_id', orderIds)
+      }
+      
       await supabase.from('orders').delete().eq('user_id', userId)
       await supabase.from('email_accounts').delete().eq('user_id', userId)
     } else {
