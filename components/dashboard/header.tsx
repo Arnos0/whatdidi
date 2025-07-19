@@ -62,9 +62,13 @@ export function DashboardHeader({ title, breadcrumbs = [], actions }: DashboardH
               </ol>
             </nav>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-            {actions && <div className="flex items-center space-x-4">{actions}</div>}
+            {actions && (
+              <div className="flex flex-wrap items-center gap-2 sm:space-x-2">
+                {actions}
+              </div>
+            )}
           </div>
         </div>
       </div>

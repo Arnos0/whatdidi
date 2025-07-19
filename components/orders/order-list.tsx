@@ -23,6 +23,7 @@ import {
 import type { Order, OrderStatus } from '@/lib/supabase/types'
 import { Package, Truck, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react'
 import { useDeleteOrder } from '@/hooks/use-orders'
+import { OrderCardSkeleton } from '@/components/ui/skeleton'
 
 interface OrderListProps {
   orders: Order[]
@@ -82,19 +83,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="p-6">
-            <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-muted rounded w-1/4"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
-              <div className="h-3 bg-muted rounded w-1/3"></div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    )
+    return <OrderCardSkeleton />
   }
 
   if (orders.length === 0) {

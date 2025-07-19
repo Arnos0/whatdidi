@@ -176,6 +176,36 @@ export const serverOrderQueries = {
     
     if (error) throw error
     return data
+  },
+
+  async getByIdAndUserId(orderId: string, userId: string): Promise<Order | null> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .eq('user_id', userId)
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null // Not found
+      }
+      throw error
+    }
+    return data
+  },
+
+  async getAllForSitemap(limit: number = 1000): Promise<{ id: string; updated_at: string | null; created_at: string }[]> {
+    const serverClient = createServerClient()
+    const { data, error } = await serverClient
+      .from('orders')
+      .select('id, updated_at, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    
+    if (error) throw error
+    return data || []
   }
 }
 

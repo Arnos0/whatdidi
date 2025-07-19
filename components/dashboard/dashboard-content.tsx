@@ -21,6 +21,7 @@ import {
   OrderStatusChart,
   AnimatedChart 
 } from '@/components/charts/dashboard-charts'
+import { DashboardStatsSkeleton } from '@/components/ui/skeleton'
 
 export function DashboardContent() {
   const { data: stats, isLoading, error } = useDashboardStats()
@@ -43,7 +44,16 @@ export function DashboardContent() {
       }
 
   if (isLoading) {
-    return <DashboardSkeleton />
+    return (
+      <div className="space-y-6">
+        <div className="px-4 sm:px-0">
+          <p className="text-muted-foreground">
+            Welcome back! Here&apos;s an overview of your purchase tracking.
+          </p>
+        </div>
+        <DashboardStatsSkeleton />
+      </div>
+    )
   }
 
   if (error) {

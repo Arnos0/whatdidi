@@ -24,6 +24,7 @@ import { Pagination } from '@/components/ui/pagination'
 import { useOrders, useCreateOrder, useResetOrders } from '@/hooks/use-orders'
 import { CreateOrderDialog } from '@/components/orders/create-order-dialog'
 import { ManualOrderButton } from '@/components/orders/manual-order-button'
+import { PullToRefresh } from '@/components/ui/pull-to-refresh'
 
 function OrdersContent() {
   const router = useRouter()
@@ -75,69 +76,76 @@ function OrdersContent() {
         title="Orders" 
         breadcrumbs={breadcrumbs}
         actions={
-          <div className="flex gap-2">
+          <>
             {isDevelopment && (
               <Button 
                 onClick={() => setResetDialogOpen(true)}
                 variant="outline"
+                size="sm"
                 className="border-orange-500 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
               >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Reset All Orders
+                <AlertTriangle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reset All Orders</span>
               </Button>
             )}
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Order
+            <Button onClick={() => setCreateDialogOpen(true)} size="sm">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Order</span>
             </Button>
             <ManualOrderButton variant="outline" size="sm" />
-          </div>
+          </>
         }
       />
       
-      <div className="mx-4 sm:mx-0 space-y-6">
-        {/* Filters */}
-        <Card className="p-6">
-          <OrderFilters />
-        </Card>
+      <PullToRefresh 
+        onRefresh={refetch}
+        className="mx-4 sm:mx-0"
+        enabled={!isLoading}
+      >
+        <div className="space-y-6">
+          {/* Filters */}
+          <Card className="p-6">
+            <OrderFilters />
+          </Card>
 
-        {/* Orders List */}
-        {error ? (
-          <Card className="p-6">
-            <div className="text-center text-destructive">
-              Failed to load orders. Please try again.
-            </div>
-          </Card>
-        ) : isLoading ? (
-          <OrderList orders={[]} isLoading={true} />
-        ) : data && data.orders.length > 0 ? (
-          <>
-            <OrderList orders={data.orders} />
-            
-            {/* Pagination */}
-            {data.pagination.totalPages > 1 && (
-              <Card className="p-4">
-                <Pagination
-                  currentPage={data.pagination.page}
-                  totalPages={data.pagination.totalPages}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={data.pagination.total}
-                  onPageChange={handlePageChange}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              </Card>
-            )}
-          </>
-        ) : (
-          <Card className="p-6">
-            <EmptyState
-              icon={<ShoppingBag className="h-6 w-6 text-muted-foreground" />}
-              title="No orders found"
-              description="You haven't added any orders yet. Start by adding your first order manually or by connecting your email account to automatically import orders."
-            />
-          </Card>
-        )}
-      </div>
+          {/* Orders List */}
+          {error ? (
+            <Card className="p-6">
+              <div className="text-center text-destructive">
+                Failed to load orders. Please try again.
+              </div>
+            </Card>
+          ) : isLoading ? (
+            <OrderList orders={[]} isLoading={true} />
+          ) : data && data.orders.length > 0 ? (
+            <>
+              <OrderList orders={data.orders} />
+              
+              {/* Pagination */}
+              {data.pagination.totalPages > 1 && (
+                <Card className="p-4">
+                  <Pagination
+                    currentPage={data.pagination.page}
+                    totalPages={data.pagination.totalPages}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={data.pagination.total}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </Card>
+              )}
+            </>
+          ) : (
+            <Card className="p-6">
+              <EmptyState
+                icon={<ShoppingBag className="h-6 w-6 text-muted-foreground" />}
+                title="No orders found"
+                description="You haven't added any orders yet. Start by adding your first order manually or by connecting your email account to automatically import orders."
+              />
+            </Card>
+          )}
+        </div>
+      </PullToRefresh>
 
       <CreateOrderDialog
         open={createDialogOpen}

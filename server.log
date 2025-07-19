@@ -58,3 +58,145 @@
  GET /api/orders?page=1&limit=10 200 in 314ms
  POST /api/sync-user 200 in 361ms
  GET /api/dashboard/stats 200 in 178ms
+ ✓ Compiled in 1316ms (4065 modules)
+ ✓ Compiled in 480ms (4065 modules)
+ ✓ Compiled in 401ms (1936 modules)
+ ✓ Compiled in 259ms (1936 modules)
+ ✓ Compiled in 281ms (1936 modules)
+ ✓ Compiled in 336ms (1936 modules)
+ ✓ Compiled in 539ms (4065 modules)
+ ✓ Compiled in 1394ms (4246 modules)
+ ⨯ Error: Cannot find module './2510.js'
+Require stack:
+- /home/arno/Projects/whatdidi/.next/server/webpack-runtime.js
+- /home/arno/Projects/whatdidi/.next/server/app/(dashboard)/dashboard/page.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/hot-middleware.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-server.js
+- /home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /home/arno/Projects/whatdidi/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/home/arno/Projects/whatdidi/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/home/arno/Projects/whatdidi/.next/server/webpack-runtime.js:208:28)
+    at /home/arno/Projects/whatdidi/.next/server/webpack-runtime.js:116:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/home/arno/Projects/whatdidi/.next/server/webpack-runtime.js:115:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/home/arno/Projects/whatdidi/.next/server/webpack-runtime.js:167:22)
+    at /home/arno/Projects/whatdidi/.next/server/app/page.js:1:73119
+    at Object.<anonymous> (/home/arno/Projects/whatdidi/.next/server/app/page.js:1:73187)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/home/arno/Projects/whatdidi/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js:109:84)
+    at /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js:103:84
+    at async loadComponentsImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js:103:26)
+    at async DevServer.findPageComponentsImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/next-server.js:714:36)
+    at async DevServer.findPageComponents (/home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/home/arno/Projects/whatdidi/node_modules/next/dist/server/base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/home/arno/Projects/whatdidi/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/base-server.js:818:17)
+    at async /home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/home/arno/Projects/whatdidi/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-server.js:182:21)
+    at async handleRequest (/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/arno/Projects/whatdidi/.next/server/webpack-runtime.js',
+    '/home/arno/Projects/whatdidi/.next/server/app/(dashboard)/dashboard/page.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/router-server.js',
+    '/home/arno/Projects/whatdidi/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1526ms (4276 modules)
+ GET / 500 in 1834ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 857ms (4279 modules)
+ GET /_next/static/css/app/layout.css?v=1752947000439 404 in 983ms
+ GET / 200 in 110ms
+ GET /_next/static/css/app/layout.css?v=1752947001485 404 in 62ms
+ GET /_next/static/chunks/main-app.js?v=1752947001485 404 in 93ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 92ms
+ GET /_next/static/chunks/app/page.js 404 in 90ms
+ GET /_next/static/chunks/app/layout.js 404 in 67ms
+ GET /_next/static/css/app/layout.css?v=1752947001576 404 in 33ms
+ GET /_next/static/css/app/layout.css?v=1752947001576 404 in 25ms
+ GET / 200 in 41ms
+ GET /_next/static/css/app/layout.css?v=1752947009380 404 in 79ms
+ GET /_next/static/chunks/app/page.js 404 in 78ms
+ GET /_next/static/chunks/main-app.js?v=1752947009380 404 in 83ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 83ms
+ GET /_next/static/chunks/app/layout.js 404 in 82ms
+[Error: ENOENT: no such file or directory, stat '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/home/arno/Projects/whatdidi/.next/cache/webpack/client-development/9.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/home/arno/Projects/whatdidi/.next/server'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/page' in /home/arno/Projects/whatdidi/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/home/arno/Projects/whatdidi/.next/server/app/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/page' in '/home/arno/Projects/whatdidi/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/page (expected /home/arno/Projects/whatdidi/.next/server/app/page.js)
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/(dashboard)/dashboard/page' in /home/arno/Projects/whatdidi/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/home/arno/Projects/whatdidi/.next/server/app/(dashboard)/dashboard/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/(dashboard)/dashboard/page' in '/home/arno/Projects/whatdidi/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/(dashboard)/dashboard/page (expected /home/arno/Projects/whatdidi/.next/server/app/(dashboard)/dashboard/page.js)
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/server/require.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /home/arno/Projects/whatdidi/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+[?25h
