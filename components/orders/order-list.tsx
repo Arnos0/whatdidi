@@ -128,6 +128,15 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                       key={order.id} 
                       className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
                       onClick={() => handleOrderClick(order.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View order #${order.order_number} details`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOrderClick(order.id);
+                        }
+                      }}
                     >
                       <td className="px-6 py-4 font-medium">
                         #{order.order_number}
@@ -171,6 +180,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                           size="icon"
                           onClick={(e) => handleDeleteClick(e, order.id)}
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          aria-label={`Delete order #${order.order_number}`}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -193,6 +203,15 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
               key={order.id} 
               className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => handleOrderClick(order.id)}
+              role="button"
+              tabIndex={0}
+              aria-label={`View order #${order.order_number} details`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleOrderClick(order.id);
+                }
+              }}
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
@@ -215,6 +234,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                       size="icon"
                       onClick={(e) => handleDeleteClick(e, order.id)}
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      aria-label={`Delete order #${order.order_number}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -15,6 +15,7 @@ import { X, Plus, Upload } from 'lucide-react'
 import { CARRIERS } from '@/lib/validation/order-form'
 import { RetailerCombobox } from './retailer-combobox'
 import { useRetailers } from '@/hooks/use-retailers'
+import Image from 'next/image'
 
 interface CreateOrderFormProps {
   onSubmit: (data: CreateOrderInput) => Promise<void>
@@ -228,10 +229,13 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
             className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50"
           >
             {receiptPreview ? (
-              <img
+              <Image
                 src={receiptPreview}
                 alt="Receipt preview"
                 className="h-full object-contain"
+                width={200}
+                height={128}
+                style={{ objectFit: 'contain' }}
               />
             ) : (
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -256,7 +260,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
       </div>
 
       <div className="flex justify-end gap-3">
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting} aria-label={isSubmitting ? 'Creating order' : 'Submit create order form'}>
           {isSubmitting ? 'Creating...' : 'Create Order'}
         </Button>
       </div>

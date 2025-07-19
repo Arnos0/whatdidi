@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { ShoppingBag, Package, TrendingUp, Eye, ArrowRight, ChartBarIcon, ShoppingCartIcon } from 'lucide-react'
 import { RetailerIcon } from '@/components/ui/retailer-icon'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
+import { useReducedMotion } from '@/hooks/use-reduced-motion'
+import { ComponentErrorBoundary } from '@/components/ui/error-boundary'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { OrderSourceIndicator } from '@/components/orders/order-source-indicator'
 import { EmptyStateActions } from './dashboard-actions'
@@ -22,6 +24,23 @@ import {
 
 export function DashboardContent() {
   const { data: stats, isLoading, error } = useDashboardStats()
+  const prefersReducedMotion = useReducedMotion()
+  
+  // Animation variants that respect motion preferences
+  const fadeInUp = prefersReducedMotion 
+    ? {} 
+    : {
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.5 }
+      }
+  
+  const staggerContainer = prefersReducedMotion
+    ? {}
+    : {
+        initial: {},
+        animate: { transition: { staggerChildren: 0.1 } }
+      }
 
   if (isLoading) {
     return <DashboardSkeleton />
@@ -128,39 +147,45 @@ export function DashboardContent() {
           {/* Data Visualizations */}
           <div className="space-y-6 px-4 sm:px-0">
             {/* Spending Trend Chart */}
-            <AnimatedChart delay={0.2}>
-              <SpendingTrendChart 
-                data={[
-                  { month: 'Jan', spending: 1200, orders: 8 },
-                  { month: 'Feb', spending: 1800, orders: 12 },
-                  { month: 'Mar', spending: 1400, orders: 10 },
-                  { month: 'Apr', spending: 2200, orders: 15 },
-                  { month: 'May', spending: 1900, orders: 13 },
-                  { month: 'Jun', spending: 2400, orders: 18 },
-                  { month: 'Jul', spending: stats.totals.monthlySpent, orders: stats.totals.orders }
-                ]}
-              />
-            </AnimatedChart>
+            <ComponentErrorBoundary name="Spending Chart">
+              <AnimatedChart delay={0.2}>
+                <SpendingTrendChart 
+                  data={[
+                    { month: 'Jan', spending: 1200, orders: 8 },
+                    { month: 'Feb', spending: 1800, orders: 12 },
+                    { month: 'Mar', spending: 1400, orders: 10 },
+                    { month: 'Apr', spending: 2200, orders: 15 },
+                    { month: 'May', spending: 1900, orders: 13 },
+                    { month: 'Jun', spending: 2400, orders: 18 },
+                    { month: 'Jul', spending: stats.totals.monthlySpent, orders: stats.totals.orders }
+                  ]}
+                />
+              </AnimatedChart>
+            </ComponentErrorBoundary>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AnimatedChart delay={0.4}>
-                <RetailerDistributionChart 
-                  data={stats.distributions.topRetailers.map(r => ({
-                    name: r.retailer,
-                    value: r.count
-                  }))}
-                />
-              </AnimatedChart>
+              <ComponentErrorBoundary name="Retailer Distribution Chart">
+                <AnimatedChart delay={0.4}>
+                  <RetailerDistributionChart 
+                    data={stats.distributions.topRetailers.map(r => ({
+                      name: r.retailer,
+                      value: r.count
+                    }))}
+                  />
+                </AnimatedChart>
+              </ComponentErrorBoundary>
 
-              <AnimatedChart delay={0.6}>
-                <OrderStatusChart 
-                  data={Object.entries(stats.distributions.status).map(([status, count]) => ({
-                    status: status.charAt(0).toUpperCase() + status.slice(1),
-                    count
-                  }))}
-                />
-              </AnimatedChart>
+              <ComponentErrorBoundary name="Order Status Chart">
+                <AnimatedChart delay={0.6}>
+                  <OrderStatusChart 
+                    data={Object.entries(stats.distributions.status).map(([status, count]) => ({
+                      status: status.charAt(0).toUpperCase() + status.slice(1),
+                      count
+                    }))}
+                  />
+                </AnimatedChart>
+              </ComponentErrorBoundary>
             </div>
           </div>
 
@@ -170,7 +195,7 @@ export function DashboardContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold font-display">Recent Orders</h2>
                 <Link href="/orders">
-                  <Button variant="gradient" size="sm" className="group">
+                  <Button variant="gradient" size="sm" className="group" aria-label="View all orders">
                     View All
                     <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -230,7 +255,7 @@ export function DashboardContent() {
                           </div>
                           
                           <Link href={`/orders/${order.id}`}>
-                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`View order #${order.order_number} details`}>
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
@@ -392,6 +417,7 @@ function DashboardError() {
             variant="gradient" 
             onClick={() => window.location.reload()}
             className="group"
+            aria-label="Reload dashboard data"
           >
             Try Again
           </Button>

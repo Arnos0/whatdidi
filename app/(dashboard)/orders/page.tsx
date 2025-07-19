@@ -202,7 +202,19 @@ function OrdersContent() {
 
 export default function OrdersPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-1/4 mb-6"></div>
+          <div className="h-16 bg-muted rounded mb-6"></div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-muted rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
       <OrdersContent />
     </Suspense>
   )

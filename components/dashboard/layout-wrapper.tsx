@@ -36,7 +36,7 @@ export function LayoutWrapper({ children, variant = 'horizontal' }: LayoutWrappe
     return (
       <div className="min-h-screen bg-background flex">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block">
+        <div className="hidden md:block" id="primary-navigation">
           <Sidebar collapsed={sidebarCollapsed} onToggle={setSidebarCollapsed} />
         </div>
         
@@ -76,7 +76,7 @@ export function LayoutWrapper({ children, variant = 'horizontal' }: LayoutWrappe
               <UserButton afterSignOutUrl="/" />
             </div>
           </div>
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto" id="main-content">
             <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
               <DashboardErrorBoundary>
                 {children}
@@ -91,8 +91,10 @@ export function LayoutWrapper({ children, variant = 'horizontal' }: LayoutWrappe
   // Default horizontal layout
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div id="primary-navigation">
+        <Navbar />
+      </div>
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" id="main-content">
         <DashboardErrorBoundary>
           {children}
         </DashboardErrorBoundary>

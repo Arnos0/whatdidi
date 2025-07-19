@@ -67,6 +67,9 @@ export function Header() {
               size="icon"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="hover:bg-muted"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -80,7 +83,7 @@ export function Header() {
         {/* Mobile Navigation Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border/50">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-background/95 backdrop-blur">
+            <nav id="mobile-navigation" className="px-2 pt-2 pb-3 space-y-1 bg-background/95 backdrop-blur" role="navigation" aria-label="Mobile navigation">
               <Link
                 href="#features"
                 className="block px-3 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted rounded-md transition-colors"
@@ -120,7 +123,7 @@ export function Header() {
                   Dashboard
                 </Link>
               </SignedIn>
-            </div>
+            </nav>
           </div>
         )}
       </Container>
