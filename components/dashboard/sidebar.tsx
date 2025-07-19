@@ -162,13 +162,6 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                           )}
                         </AnimatePresence>
                         
-                        {isActive && (
-                          <motion.div
-                            className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-primary rounded-l-full"
-                            layoutId="activeIndicator"
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                          />
-                        )}
                       </Link>
                     </TooltipTrigger>
                     {isCollapsed && !shouldExpand && (
