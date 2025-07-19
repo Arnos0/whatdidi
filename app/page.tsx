@@ -161,7 +161,7 @@ export default function Home() {
                   >
                     <GlassCard className="p-6 h-full hover:shadow-glow-lg transition-all duration-300 group">
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                        <Icon className="h-6 w-6 text-white" />
+                        <Icon className="h-6 w-6 text-white" aria-hidden="true" />
                       </div>
                       <h3 className="text-xl font-semibold font-display mb-3">{feature.title}</h3>
                       <p className="text-muted-foreground leading-relaxed">{feature.description}</p>

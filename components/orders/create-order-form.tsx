@@ -231,7 +231,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
             {receiptPreview ? (
               <Image
                 src={receiptPreview}
-                alt="Receipt preview"
+                alt={`Preview of uploaded receipt ${receiptFile?.name || 'image'}`}
                 className="h-full object-contain"
                 width={200}
                 height={128}

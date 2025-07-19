@@ -4,8 +4,15 @@ import { serverUserQueries, serverOrderQueries, serverOrderItemQueries } from '@
 import { orderQuerySchema } from '@/lib/validation/orders'
 import { createOrderSchema } from '@/lib/validation/order-form'
 import { createServerClient } from '@/lib/supabase/server-client'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting (200 requests per minute for orders API)
+  const rateLimitResponse = await withRateLimit(request, 'api', 200)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     // Check authentication
     const { userId: clerkId } = await auth()
@@ -88,6 +95,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting (50 requests per minute for order creation)
+  const rateLimitResponse = await withRateLimit(request, 'api', 50)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     // Check authentication
     const { userId: clerkId } = await auth()

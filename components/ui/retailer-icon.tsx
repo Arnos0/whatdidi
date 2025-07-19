@@ -94,6 +94,8 @@ export function RetailerIcon({ retailer, size = 'md', className, showName = fals
         <div 
           className={cn('flex-shrink-0 rounded-lg overflow-hidden', sizeClasses[size])}
           dangerouslySetInnerHTML={{ __html: logoSvg }}
+          role="img"
+          aria-label={`${retailer} logo`}
         />
         {showName && (
           <span className="font-medium text-foreground">{retailer}</span>
@@ -105,17 +107,24 @@ export function RetailerIcon({ retailer, size = 'md', className, showName = fals
   // Fallback for unknown retailers
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className={cn(
-        'flex-shrink-0 rounded-lg bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center border border-border/50',
-        sizeClasses[size]
-      )}>
-        <ShoppingBag className={cn(
-          'text-muted-foreground',
-          size === 'sm' && 'w-3 h-3',
-          size === 'md' && 'w-4 h-4',
-          size === 'lg' && 'w-5 h-5',
-          size === 'xl' && 'w-6 h-6'
-        )} />
+      <div 
+        className={cn(
+          'flex-shrink-0 rounded-lg bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center border border-border/50',
+          sizeClasses[size]
+        )}
+        role="img"
+        aria-label={`${retailer} retailer icon`}
+      >
+        <ShoppingBag 
+          className={cn(
+            'text-muted-foreground',
+            size === 'sm' && 'w-3 h-3',
+            size === 'md' && 'w-4 h-4',
+            size === 'lg' && 'w-5 h-5',
+            size === 'xl' && 'w-6 h-6'
+          )}
+          aria-hidden="true"
+        />
       </div>
       {showName && (
         <span className="font-medium text-foreground">{retailer}</span>

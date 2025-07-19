@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import { Providers } from './providers'
 import { Toaster } from 'sonner'
 import { SkipNavLinks } from '@/components/ui/skip-nav'
+import { WebVitalsReporter } from '@/components/analytics/web-vitals-reporter'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -51,6 +52,7 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <body className={inter.className}>
           <SkipNavLinks />
+          <WebVitalsReporter />
           <ThemeProvider>
             <Providers>
               {children}

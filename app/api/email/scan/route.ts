@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { serverUserQueries, serverEmailAccountQueries } from '@/lib/supabase/server-queries'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
 import { z } from 'zod'
 
 const scanRequestSchema = z.object({
@@ -10,6 +11,12 @@ const scanRequestSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting (5 requests per minute for email scanning - resource intensive)
+  const rateLimitResponse = await withRateLimit(request, 'emailScan', 5)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     // Check authentication
     const { userId: clerkId } = await auth()

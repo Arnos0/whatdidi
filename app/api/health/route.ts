@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server-client'
+import { validateEnvironment } from '@/lib/config/env-validation'
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,13 +32,23 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Check environment variables
+    // Check environment variables with comprehensive validation
+    const envValidation = validateEnvironment()
     const envStatus = {
-      GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
-      TOKEN_ENCRYPTION_KEY: !!process.env.TOKEN_ENCRYPTION_KEY,
-      SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL
+      validation: {
+        isValid: envValidation.isValid,
+        errors: envValidation.errors,
+        warnings: envValidation.warnings
+      },
+      variables: {
+        GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+        TOKEN_ENCRYPTION_KEY: !!process.env.TOKEN_ENCRYPTION_KEY && process.env.TOKEN_ENCRYPTION_KEY.length >= 32,
+        SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+        OPENAI_API_KEY: !!process.env.OPENAI_API_KEY
+      }
     }
     
     return NextResponse.json({

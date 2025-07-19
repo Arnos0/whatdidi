@@ -2,8 +2,27 @@ import 'server-only'
 import CryptoJS from 'crypto-js'
 import type { EmailProvider } from '@/lib/supabase/types'
 
-// Get encryption key from environment
-const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || 'development-key-not-for-production'
+// Get encryption key from environment with validation
+function getEncryptionKey(): string {
+  const key = process.env.TOKEN_ENCRYPTION_KEY
+  
+  if (!key) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('TOKEN_ENCRYPTION_KEY environment variable is required in production')
+    }
+    console.warn('⚠️  WARNING: Using development encryption key. Set TOKEN_ENCRYPTION_KEY in production.')
+    return 'development-key-not-for-production'
+  }
+  
+  // Validate key strength (minimum 32 characters)
+  if (key.length < 32) {
+    throw new Error('TOKEN_ENCRYPTION_KEY must be at least 32 characters long for security')
+  }
+  
+  return key
+}
+
+const ENCRYPTION_KEY = getEncryptionKey()
 
 // Token encryption utilities
 export const tokenEncryption = {

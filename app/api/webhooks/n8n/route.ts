@@ -5,6 +5,7 @@ import { buildMVPPrompt } from '@/lib/ai/prompt-builder'
 import { detectEmailLanguage } from '@/lib/email/utils/language-detector'
 import { normalizeOrderStatus } from '@/lib/utils/status-mapper'
 import { parseFlexibleNumber } from '@/lib/utils/dutch-number-parser'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
 import { 
   validateWebhookPayload, 
   formatValidationErrors,
@@ -50,6 +51,12 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export async function POST(req: NextRequest) {
+  // Apply rate limiting first (10 requests per minute for webhooks)
+  const rateLimitResponse = await withRateLimit(req, 'webhook', 10)
+  if (rateLimitResponse) {
+    return addSecurityHeaders(rateLimitResponse)
+  }
+
   try {
     // Security: Check content length (max 1MB)
     const contentLength = req.headers.get('content-length')
