@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,11 +22,7 @@ export function ErrorDashboard() {
   const [stats, setStats] = useState<any>({})
   const [filter, setFilter] = useState<string>('all')
 
-  useEffect(() => {
-    refreshData()
-  }, [filter])
-
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     const allReports = getReports()
     const filteredReports = filter === 'all' 
       ? allReports
@@ -34,7 +30,11 @@ export function ErrorDashboard() {
     
     setReports(filteredReports)
     setStats(getErrorStats())
-  }
+  }, [filter, getReports, getErrorStats])
+
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
 
   const getSeverityIcon = (severity: ErrorReport['severity']) => {
     switch (severity) {

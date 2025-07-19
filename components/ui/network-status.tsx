@@ -94,7 +94,7 @@ export function NetworkStatus({ showWhenOnline = false, className = '' }: Networ
         initial: { opacity: 0, y: -20, scale: 0.95 },
         animate: { opacity: 1, y: 0, scale: 1 },
         exit: { opacity: 0, y: -20, scale: 0.95 },
-        transition: { duration: 0.3, type: "spring", stiffness: 300, damping: 30 }
+        transition: { duration: 0.3, type: "spring" as const, stiffness: 300, damping: 30 }
       }
 
   return (

@@ -150,14 +150,15 @@ class ErrorTracker {
   }
 
   private logToConsole(report: ErrorReport) {
-    const logLevel = {
-      low: 'log',
-      medium: 'warn',
-      high: 'error',
-      critical: 'error'
-    }[report.severity] as keyof Console
+    const logMethods = {
+      low: console.log,
+      medium: console.warn,
+      high: console.error,
+      critical: console.error
+    }
 
-    console[logLevel]('Error Report:', {
+    const logMethod = logMethods[report.severity]
+    logMethod('Error Report:', {
       id: report.id,
       error: report.error,
       context: report.context,
@@ -199,7 +200,7 @@ class ErrorTracker {
     }
 
     if (filters?.since) {
-      filteredReports = filteredReports.filter(r => r.context.timestamp >= filters.since)
+      filteredReports = filteredReports.filter(r => r.context.timestamp >= filters.since!)
     }
 
     return filteredReports

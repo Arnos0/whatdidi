@@ -127,7 +127,7 @@ export function ErrorRecovery({
   const handleStepAction = (step: RecoveryStep) => {
     try {
       step.action?.()
-      setCompletedSteps(prev => new Set([...prev, step.id]))
+      setCompletedSteps(prev => new Set([...Array.from(prev), step.id]))
     } catch (actionError) {
       captureComponentError(
         actionError instanceof Error ? actionError : new Error('Step action failed'),

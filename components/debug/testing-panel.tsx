@@ -107,7 +107,7 @@ export function TestingPanel() {
     }
     
     const validationError = new ValidationError(errors[scenario as keyof typeof errors] || 'Validation failed')
-    captureError(validationError, { component: 'TestingPanel', action: 'testFormValidation', scenario })
+    captureError(validationError, { component: 'TestingPanel', action: 'testFormValidation', additionalData: { scenario } })
     toast.error(validationError.userMessage)
   }
 

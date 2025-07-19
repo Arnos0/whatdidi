@@ -91,7 +91,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
           htmlFor="orderNumber"
           required
           error={errors.orderNumber?.message}
-          suggestions={errors.orderNumber ? getFieldValidationHelp('orderNumber', errors.orderNumber.message).suggestions : undefined}
+          suggestions={errors.orderNumber?.message ? getFieldValidationHelp('orderNumber', errors.orderNumber.message).suggestions : undefined}
           helpText={getFieldHelpText('orderNumber')}
         >
           <Input
@@ -105,7 +105,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
           label="Retailer"
           required
           error={errors.retailer?.message}
-          suggestions={errors.retailer ? getFieldValidationHelp('retailer', errors.retailer.message).suggestions : undefined}
+          suggestions={errors.retailer?.message ? getFieldValidationHelp('retailer', errors.retailer.message).suggestions : undefined}
           helpText={getFieldHelpText('retailer')}
         >
           <RetailerCombobox
@@ -122,7 +122,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
           htmlFor="amount"
           required
           error={errors.amount?.message}
-          suggestions={errors.amount ? getFieldValidationHelp('amount', errors.amount.message).suggestions : undefined}
+          suggestions={errors.amount?.message ? getFieldValidationHelp('amount', errors.amount.message).suggestions : undefined}
           helpText={getFieldHelpText('amount')}
         >
           <Input
@@ -138,7 +138,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
           label="Order Date"
           required
           error={errors.orderDate?.message}
-          suggestions={errors.orderDate ? getFieldValidationHelp('date', errors.orderDate.message).suggestions : undefined}
+          suggestions={errors.orderDate?.message ? getFieldValidationHelp('date', errors.orderDate.message).suggestions : undefined}
           helpText={getFieldHelpText('orderDate')}
         >
           <DatePicker
@@ -153,7 +153,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
           label="Tracking Number"
           htmlFor="trackingNumber"
           error={errors.trackingNumber?.message}
-          suggestions={errors.trackingNumber ? getFieldValidationHelp('trackingNumber', errors.trackingNumber.message).suggestions : undefined}
+          suggestions={errors.trackingNumber?.message ? getFieldValidationHelp('trackingNumber', errors.trackingNumber.message).suggestions : undefined}
           helpText={getFieldHelpText('trackingNumber')}
         >
           <Input

@@ -43,9 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
       component: 'ErrorBoundary',
       action: 'componentDidCatch',
       additionalData: {
-        componentStack: errorInfo.componentStack,
-        errorBoundaryStack: errorInfo.errorBoundary?.toString(),
-        errorBoundaryName: errorInfo.errorBoundaryName
+        componentStack: errorInfo.componentStack
       }
     }, 'high', ['error-boundary', 'react-error'])
 
