@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { OrderSourceIndicator } from '@/components/orders/order-source-indicator'
+import { RetailerIcon } from '@/components/ui/retailer-icon'
 import { formatDutchCurrency } from '@/lib/utils/currency-formatter'
 import {
   AlertDialog,
@@ -132,7 +133,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
                         #{order.order_number}
                       </td>
                       <td className="px-6 py-4">
-                        {order.retailer}
+                        <RetailerIcon retailer={order.retailer} showName />
                       </td>
                       <td className="px-6 py-4">
                         {formatDutchCurrency(order.amount)}
@@ -195,9 +196,12 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">#{order.order_number}</div>
-                    <div className="text-sm text-muted-foreground">{order.retailer}</div>
+                  <div className="flex items-center gap-3">
+                    <RetailerIcon retailer={order.retailer} size="lg" />
+                    <div>
+                      <div className="font-medium">#{order.order_number}</div>
+                      <div className="text-sm text-muted-foreground">{order.retailer}</div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <OrderSourceIndicator 

@@ -4,6 +4,7 @@ import { Card, MetricCard, GlassCard } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ShoppingBag, Package, TrendingUp, Eye, ArrowRight, ChartBarIcon, ShoppingCartIcon } from 'lucide-react'
+import { RetailerIcon } from '@/components/ui/retailer-icon'
 import { useDashboardStats } from '@/hooks/use-dashboard-stats'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { OrderSourceIndicator } from '@/components/orders/order-source-indicator'
@@ -193,11 +194,10 @@ export function DashboardContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <motion.div 
-                            className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center"
-                            whileHover={{ rotate: 360 }}
-                            transition={{ duration: 0.5 }}
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.3 }}
                           >
-                            <ShoppingBag className="h-6 w-6 text-white" />
+                            <RetailerIcon retailer={order.retailer} size="xl" />
                           </motion.div>
                           <div>
                             <div className="font-medium group-hover:text-primary transition-colors">
