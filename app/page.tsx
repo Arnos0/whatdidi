@@ -95,7 +95,7 @@ export default function Home() {
                 className="text-xl text-muted-foreground leading-relaxed mb-12 max-w-2xl mx-auto"
               >
                 WhatDidiShop automatically tracks all your online purchases and deliveries in one beautiful dashboard. 
-                Connect your email, and we'll handle the rest with AI-powered order recognition.
+                Connect your email, and we&apos;ll handle the rest with AI-powered order recognition.
               </motion.p>
               
               <motion.div 
