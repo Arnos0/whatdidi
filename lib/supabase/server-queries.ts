@@ -132,7 +132,7 @@ export const serverOrderQueries = {
       .from('orders')
       .select(`
         *,
-        order_items (*)
+        order_items!order_items_order_id_fkey (*)
       `)
       .eq('id', orderId)
       .eq('user_id', userId)

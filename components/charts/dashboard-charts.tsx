@@ -20,6 +20,7 @@ import {
 } from 'recharts'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { RetailerIcon } from '@/components/ui/retailer-icon'
 
 // Premium color palette for charts
 const CHART_COLORS = {
@@ -142,7 +143,9 @@ export function RetailerDistributionChart({ data, className }: RetailerDistribut
   return (
     <GlassCard className={cn("p-6", className)}>
       <h3 className="text-lg font-semibold mb-4 font-display">Retailer Distribution</h3>
-      <div className="h-64">
+      
+      {/* Chart Section */}
+      <div className="h-48 mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -150,8 +153,8 @@ export function RetailerDistributionChart({ data, className }: RetailerDistribut
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-              outerRadius={80}
+              label={({ percent }) => `${percent ? (percent * 100).toFixed(0) : 0}%`}
+              outerRadius={60}
               fill="#8884d8"
               dataKey="value"
               animationBegin={0}
@@ -164,6 +167,27 @@ export function RetailerDistributionChart({ data, className }: RetailerDistribut
             <Tooltip content={<CustomTooltip />} />
           </PieChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Retailer Legend with Logos */}
+      <div className="space-y-3">
+        {data.map((entry, index) => (
+          <div key={entry.name} className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-3 h-3 rounded-sm" 
+                style={{ backgroundColor: colors[index % colors.length] }}
+              />
+              <RetailerIcon retailer={entry.name} showName className="text-sm" />
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-medium">{entry.value}</span>
+              <span className="text-xs text-muted-foreground ml-1">
+                ({((entry.value / data.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(0)}%)
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </GlassCard>
   )

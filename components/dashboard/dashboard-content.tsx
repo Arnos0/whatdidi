@@ -111,11 +111,10 @@ export function DashboardContent() {
                   >
                     <div className="flex items-center gap-3">
                       <motion.div
-                        className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center"
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.5 }}
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <ShoppingBag className="h-5 w-5 text-white" />
+                        <RetailerIcon retailer={retailer} size="lg" />
                       </motion.div>
                       <span className="font-medium">{retailer}</span>
                     </div>

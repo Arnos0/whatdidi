@@ -8,46 +8,87 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let user: any = null
+  let clerkId: string | null = null
+  
   try {
+    console.log('🔍 Order Detail API Debug:', {
+      orderId: params.id,
+      timestamp: new Date().toISOString()
+    })
+
     // Check authentication
-    const { userId: clerkId } = await auth()
+    const authResult = await auth()
+    clerkId = authResult.userId
     if (!clerkId) {
+      console.log('❌ Order Detail API: No Clerk ID found')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    console.log('✅ Order Detail API: Clerk ID found:', clerkId)
+
     // Get user from database
-    const user = await serverUserQueries.findByClerkId(clerkId)
+    user = await serverUserQueries.findByClerkId(clerkId)
     if (!user) {
+      console.log('❌ Order Detail API: User not found in database for Clerk ID:', clerkId)
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
+    console.log('✅ Order Detail API: Database user found:', {
+      userId: user.id,
+      email: user.email
+    })
+
     // Validate order ID
     const validationResult = orderIdSchema.safeParse({ id: params.id })
     if (!validationResult.success) {
+      console.log('❌ Order Detail API: Invalid order ID format:', params.id)
       return NextResponse.json(
         { error: 'Invalid order ID' },
         { status: 400 }
       )
     }
 
+    console.log('✅ Order Detail API: Order ID validation passed')
+
     // Get order with items
+    console.log('🔍 Order Detail API: Querying order with ID:', params.id, 'for user:', user.id)
     const order = await serverOrderQueries.getByIdWithItems(params.id, user.id)
+    
     if (!order) {
+      console.log('❌ Order Detail API: Order not found or no access:', {
+        orderId: params.id,
+        userId: user.id
+      })
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
+    console.log('✅ Order Detail API: Order found:', {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      retailer: order.retailer,
+      itemsCount: order.order_items?.length || 0
+    })
+
     return NextResponse.json({ order })
 
   } catch (error) {
+    console.error('🔍 Order Detail API Error:', {
+      orderId: params.id,
+      userId: user?.id,
+      clerkId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
       { error: 'Failed to fetch order' },
       { status: 500 }
