@@ -1,0 +1,183 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+// Lazy check for rate limiting disabled state
+let RATE_LIMIT_DISABLED: boolean | undefined
+
+function isRateLimitDisabled(): boolean {
+  if (RATE_LIMIT_DISABLED === undefined) {
+    RATE_LIMIT_DISABLED = process.env.DISABLE_RATE_LIMIT === 'true'
+  }
+  return RATE_LIMIT_DISABLED
+}
+
+// Rate limiting configurations for different endpoint types
+const rateLimitConfigs = {
+  api: {
+    interval: 60 * 1000, // 1 minute
+    maxRequests: 100, // 100 requests per minute
+  },
+  auth: {
+    interval: 60 * 1000, // 1 minute  
+    maxRequests: 20, // 20 requests per minute
+  },
+  webhook: {
+    interval: 60 * 1000, // 1 minute
+    maxRequests: 50, // 50 requests per minute
+  },
+  emailScan: {
+    interval: 60 * 1000, // 1 minute
+    maxRequests: 30, // 30 requests per minute
+  }
+}
+
+export type RateLimitType = keyof typeof rateLimitConfigs
+
+// Simple in-memory rate limiter storage
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
+
+// Cleanup interval reference
+let cleanupInterval: NodeJS.Timeout | null = null
+
+// Initialize cleanup only when first used
+function ensureCleanupRunning() {
+  if (!cleanupInterval && typeof process !== 'undefined' && process.versions && process.versions.node) {
+    cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, value] of rateLimitStore.entries()) {
+        if (value.resetTime < now) {
+          rateLimitStore.delete(key)
+        }
+      }
+    }, 5 * 60 * 1000)
+    
+    // Prevent interval from keeping process alive
+    cleanupInterval.unref?.()
+  }
+}
+
+/**
+ * Get client identifier for rate limiting
+ */
+function getClientIdentifier(request: NextRequest): string {
+  // Try to get user ID from headers (if authenticated)
+  const userId = request.headers.get('x-user-id')
+  if (userId) {
+    return `user:${userId}`
+  }
+
+  // Fall back to IP address
+  const forwarded = request.headers.get('x-forwarded-for')
+  const realIP = request.headers.get('x-real-ip')
+  const ip = forwarded?.split(',')[0] || realIP || 'unknown'
+  
+  return `ip:${ip}`
+}
+
+/**
+ * Rate limiting middleware for API routes
+ */
+export async function withRateLimit(
+  request: NextRequest,
+  type: RateLimitType = 'api',
+  maxRequests?: number
+): Promise<NextResponse | null> {
+  // Skip rate limiting if disabled
+  if (isRateLimitDisabled()) {
+    return null
+  }
+
+  try {
+    // Ensure cleanup is running
+    ensureCleanupRunning()
+    
+    const config = rateLimitConfigs[type]
+    const limit = maxRequests || config.maxRequests
+    const now = Date.now()
+    
+    // Get client identifier
+    const clientId = getClientIdentifier(request)
+    const key = `${type}:${clientId}`
+    
+    // Get or create rate limit entry
+    let entry = rateLimitStore.get(key)
+    
+    if (!entry || entry.resetTime < now) {
+      // Create new entry
+      entry = {
+        count: 1,
+        resetTime: now + config.interval
+      }
+      rateLimitStore.set(key, entry)
+      return null // Allow request
+    }
+    
+    // Check if limit exceeded
+    if (entry.count >= limit) {
+      const retryAfter = Math.ceil((entry.resetTime - now) / 1000)
+      
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          message: 'Too many requests. Please try again later.',
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'Retry-After': retryAfter.toString(),
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(entry.resetTime).toISOString()
+          },
+        }
+      )
+    }
+    
+    // Increment count
+    entry.count++
+    
+    // Return null to allow the request
+    return null
+  } catch (error) {
+    // Log error but don't block the request
+    console.error('Rate limit check failed:', error)
+    return null
+  }
+}
+
+/**
+ * Higher-order function to wrap API handlers with rate limiting
+ */
+export function withRateLimitedHandler(
+  handler: (request: NextRequest) => Promise<NextResponse>,
+  type: RateLimitType = 'api',
+  maxRequests?: number
+) {
+  return async function rateLimitedHandler(request: NextRequest): Promise<NextResponse> {
+    // Check rate limit first
+    const rateLimitResponse = await withRateLimit(request, type, maxRequests)
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
+    // If rate limit passed, call the original handler
+    return handler(request)
+  }
+}
+
+/**
+ * Rate limiting decorators for specific endpoint types
+ */
+export const rateLimitDecorators = {
+  api: (maxRequests = 100) => (handler: Function) => 
+    withRateLimitedHandler(handler as any, 'api', maxRequests),
+  
+  auth: (maxRequests = 20) => (handler: Function) => 
+    withRateLimitedHandler(handler as any, 'auth', maxRequests),
+  
+  webhook: (maxRequests = 10) => (handler: Function) => 
+    withRateLimitedHandler(handler as any, 'webhook', maxRequests),
+  
+  emailScan: (maxRequests = 30) => (handler: Function) => 
+    withRateLimitedHandler(handler as any, 'emailScan', maxRequests)
+}

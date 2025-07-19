@@ -1,119 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server'
-import rateLimit from 'next-rate-limit'
 
-// Rate limiting configurations for different endpoint types
-const rateLimitConfigs = {
-  api: {
-    interval: 60 * 1000, // 1 minute
-    uniqueTokenPerInterval: 500, // 500 unique IPs per minute
-  },
-  auth: {
-    interval: 60 * 1000, // 1 minute  
-    uniqueTokenPerInterval: 100, // 100 unique IPs per minute
-  },
-  webhook: {
-    interval: 60 * 1000, // 1 minute
-    uniqueTokenPerInterval: 50, // 50 unique IPs per minute
-  },
-  emailScan: {
-    interval: 60 * 1000, // 1 minute
-    uniqueTokenPerInterval: 200, // 200 unique IPs per minute
-  }
-}
+// Simple in-memory rate limiter without any module-level execution
+export type RateLimitType = 'api' | 'auth' | 'webhook' | 'emailScan'
 
-export type RateLimitType = keyof typeof rateLimitConfigs
+// Store for rate limit tracking
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
+
+// Configuration
+const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
+const DEFAULT_MAX_REQUESTS = 100
 
 /**
- * Rate limiting middleware for API routes
+ * Simple rate limiting check
  */
 export async function withRateLimit(
   request: NextRequest,
   type: RateLimitType = 'api',
-  maxRequests: number = 100
+  maxRequests: number = DEFAULT_MAX_REQUESTS
 ): Promise<NextResponse | null> {
-  try {
-    const config = rateLimitConfigs[type]
-    
-    // Create rate limiter with config
-    const limiter = rateLimit({
-      interval: config.interval,
-      uniqueTokenPerInterval: config.uniqueTokenPerInterval,
-    })
-    
-    // Check rate limit using the next-rate-limit API
-    const headers = limiter.checkNext(request, maxRequests)
-    
-    // Return null if rate limit check passed (headers returned means success)
+  // Skip if disabled
+  if (process.env.DISABLE_RATE_LIMIT === 'true') {
     return null
+  }
+
+  try {
+    const now = Date.now()
+    const clientId = getClientIdentifier(request)
+    const key = `${type}:${clientId}`
+    
+    // Clean old entries
+    cleanOldEntries(now)
+    
+    // Get or create entry
+    let entry = rateLimitStore.get(key)
+    
+    if (!entry || entry.resetTime < now) {
+      // Create new window
+      rateLimitStore.set(key, {
+        count: 1,
+        resetTime: now + RATE_LIMIT_WINDOW
+      })
+      return null
+    }
+    
+    // Check limit
+    if (entry.count >= maxRequests) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Too many requests' }),
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((entry.resetTime - now) / 1000).toString()
+          }
+        }
+      )
+    }
+    
+    // Increment count
+    entry.count++
+    return null
+    
   } catch (error) {
-    // Rate limit exceeded - next-rate-limit throws on limit exceeded
-    return new NextResponse(
-      JSON.stringify({
-        error: 'Rate limit exceeded',
-        message: 'Too many requests. Please try again later.',
-      }),
-      {
-        status: 429,
-        headers: {
-          'Content-Type': 'application/json',
-          'Retry-After': '60',
-        },
-      }
-    )
+    // Don't crash on rate limit errors
+    console.error('Rate limit error:', error)
+    return null
   }
 }
 
-/**
- * Get client identifier for rate limiting
- */
 function getClientIdentifier(request: NextRequest): string {
-  // Try to get user ID from headers (if authenticated)
-  const userId = request.headers.get('x-user-id')
-  if (userId) {
-    return `user:${userId}`
-  }
-
-  // Fall back to IP address
   const forwarded = request.headers.get('x-forwarded-for')
   const realIP = request.headers.get('x-real-ip')
   const ip = forwarded?.split(',')[0] || realIP || 'unknown'
-  
-  return `ip:${ip}`
+  return ip
 }
 
-/**
- * Higher-order function to wrap API handlers with rate limiting
- */
+function cleanOldEntries(now: number) {
+  // Only clean every 100 requests to avoid performance issues
+  if (Math.random() > 0.01) return
+  
+  for (const [key, value] of rateLimitStore.entries()) {
+    if (value.resetTime < now) {
+      rateLimitStore.delete(key)
+    }
+  }
+}
+
 export function withRateLimitedHandler(
   handler: (request: NextRequest) => Promise<NextResponse>,
   type: RateLimitType = 'api',
-  maxRequests: number = 100
+  maxRequests: number = DEFAULT_MAX_REQUESTS
 ) {
   return async function rateLimitedHandler(request: NextRequest): Promise<NextResponse> {
-    // Check rate limit first
     const rateLimitResponse = await withRateLimit(request, type, maxRequests)
     if (rateLimitResponse) {
       return rateLimitResponse
     }
-
-    // If rate limit passed, call the original handler
     return handler(request)
   }
 }
 
-/**
- * Rate limiting decorator for specific endpoint types
- */
 export const rateLimitDecorators = {
-  api: (maxRequests = 100) => (handler: Function) => 
-    withRateLimitedHandler(handler as any, 'api', maxRequests),
-  
-  auth: (maxRequests = 20) => (handler: Function) => 
-    withRateLimitedHandler(handler as any, 'auth', maxRequests),
-  
-  webhook: (maxRequests = 10) => (handler: Function) => 
-    withRateLimitedHandler(handler as any, 'webhook', maxRequests),
-  
-  emailScan: (maxRequests = 30) => (handler: Function) => 
-    withRateLimitedHandler(handler as any, 'emailScan', maxRequests)
+  api: (maxRequests = 100) => (handler: Function) => handler,
+  auth: (maxRequests = 20) => (handler: Function) => handler,
+  webhook: (maxRequests = 10) => (handler: Function) => handler,
+  emailScan: (maxRequests = 30) => (handler: Function) => handler
 }

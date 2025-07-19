@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+// TEMPORARILY DISABLED - Investigating server crashes
+// Remove all rate limiting logic to isolate the issue
+
+export type RateLimitType = 'api' | 'auth' | 'webhook' | 'emailScan'
+
+/**
+ * Rate limiting middleware for API routes - DISABLED
+ */
+export async function withRateLimit(
+  request: NextRequest,
+  type: RateLimitType = 'api',
+  maxRequests: number = 100
+): Promise<NextResponse | null> {
+  // Always allow requests - rate limiting disabled
+  return null
+}
+
+/**
+ * Higher-order function to wrap API handlers with rate limiting - DISABLED
+ */
+export function withRateLimitedHandler(
+  handler: (request: NextRequest) => Promise<NextResponse>,
+  type: RateLimitType = 'api',
+  maxRequests: number = 100
+) {
+  // Return handler without rate limiting
+  return handler
+}
+
+/**
+ * Rate limiting decorators for specific endpoint types - DISABLED
+ */
+export const rateLimitDecorators = {
+  api: (maxRequests = 100) => (handler: Function) => handler,
+  auth: (maxRequests = 20) => (handler: Function) => handler,
+  webhook: (maxRequests = 10) => (handler: Function) => handler,
+  emailScan: (maxRequests = 30) => (handler: Function) => handler
+}

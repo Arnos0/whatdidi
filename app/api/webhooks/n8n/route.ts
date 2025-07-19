@@ -20,9 +20,19 @@ import { ApiErrors, createErrorResponse } from '@/lib/utils/api-errors'
  * Handles both manual order entry and forwarded email processing
  */
 
-// Validate webhook token and signature
-const WEBHOOK_TOKEN = process.env.N8N_WEBHOOK_TOKEN
-const WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET // For HMAC signature verification
+// Lazy initialization for webhook configuration
+let WEBHOOK_TOKEN: string | undefined
+let WEBHOOK_SECRET: string | undefined
+
+function getWebhookConfig() {
+  if (WEBHOOK_TOKEN === undefined) {
+    WEBHOOK_TOKEN = process.env.N8N_WEBHOOK_TOKEN || null
+  }
+  if (WEBHOOK_SECRET === undefined) {
+    WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || null
+  }
+  return { WEBHOOK_TOKEN, WEBHOOK_SECRET }
+}
 
 // Timing-safe token comparison
 function verifyToken(providedToken: string | null, expectedToken: string): boolean {
@@ -88,6 +98,9 @@ export async function POST(req: NextRequest) {
 
     // Get raw body for signature verification
     const rawBody = await req.text()
+    
+    // Get webhook configuration
+    const { WEBHOOK_TOKEN, WEBHOOK_SECRET } = getWebhookConfig()
     
     // Validate webhook token with timing-safe comparison
     const token = req.headers.get('x-webhook-token')

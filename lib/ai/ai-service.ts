@@ -66,8 +66,25 @@ function getAIService(): AIService {
   }
 }
 
-// Export the selected AI service
-export const aiService = getAIService()
+// Lazy initialization of AI service
+let _aiService: AIService | null = null
+
+// Export the selected AI service with lazy initialization
+export const aiService: AIService = {
+  analyzeEmail: async (...args) => {
+    if (!_aiService) {
+      _aiService = getAIService()
+    }
+    return _aiService.analyzeEmail(...args)
+  },
+  
+  batchAnalyzeEmails: async (...args) => {
+    if (!_aiService) {
+      _aiService = getAIService()
+    }
+    return _aiService.batchAnalyzeEmails(...args)
+  }
+}
 
 // Export the shouldAnalyzeEmail function (same for both services)
 export const shouldAnalyzeEmail = (email: {

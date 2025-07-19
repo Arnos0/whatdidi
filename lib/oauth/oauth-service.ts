@@ -22,16 +22,24 @@ function getEncryptionKey(): string {
   return key
 }
 
-const ENCRYPTION_KEY = getEncryptionKey()
+// Lazy initialization to prevent module-level crashes
+let ENCRYPTION_KEY: string | null = null
+
+function ensureEncryptionKey(): string {
+  if (!ENCRYPTION_KEY) {
+    ENCRYPTION_KEY = getEncryptionKey()
+  }
+  return ENCRYPTION_KEY
+}
 
 // Token encryption utilities
 export const tokenEncryption = {
   encrypt(token: string): string {
-    return CryptoJS.AES.encrypt(token, ENCRYPTION_KEY).toString()
+    return CryptoJS.AES.encrypt(token, ensureEncryptionKey()).toString()
   },
   
   decrypt(encryptedToken: string): string {
-    const bytes = CryptoJS.AES.decrypt(encryptedToken, ENCRYPTION_KEY)
+    const bytes = CryptoJS.AES.decrypt(encryptedToken, ensureEncryptionKey())
     return bytes.toString(CryptoJS.enc.Utf8)
   }
 }
