@@ -1,5 +1,7 @@
 'use client'
 
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
 import { Card, MetricCard, GlassCard } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,13 +17,40 @@ import { formatDutchCurrency } from '@/lib/utils/currency-formatter'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { motion } from 'framer-motion'
-import { 
-  SpendingTrendChart, 
-  RetailerDistributionChart, 
-  OrderStatusChart,
-  AnimatedChart 
-} from '@/components/charts/dashboard-charts'
 import { DashboardStatsSkeleton, ChartSkeleton } from '@/components/ui/skeleton'
+
+// Dynamic imports for heavy chart components with loading states
+const SpendingTrendChart = dynamic(
+  () => import('@/components/charts/dashboard-charts').then(mod => ({ default: mod.SpendingTrendChart })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-80 w-full" />,
+    ssr: false
+  }
+)
+
+const RetailerDistributionChart = dynamic(
+  () => import('@/components/charts/dashboard-charts').then(mod => ({ default: mod.RetailerDistributionChart })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-80 w-full" />,
+    ssr: false
+  }
+)
+
+const OrderStatusChart = dynamic(
+  () => import('@/components/charts/dashboard-charts').then(mod => ({ default: mod.OrderStatusChart })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-80 w-full" />,
+    ssr: false
+  }
+)
+
+const AnimatedChart = dynamic(
+  () => import('@/components/charts/dashboard-charts').then(mod => ({ default: mod.AnimatedChart })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-6 w-32" />,
+    ssr: false
+  }
+)
 
 export function DashboardContent() {
   const { data: stats, isLoading, error } = useDashboardStats()
@@ -160,43 +189,49 @@ export function DashboardContent() {
           <div className="space-y-6 px-4 sm:px-0">
             {/* Spending Trend Chart */}
             <ComponentErrorBoundary name="Spending Chart">
-              <AnimatedChart delay={0.2}>
-                <SpendingTrendChart 
-                  data={[
-                    { month: 'Jan', spending: 1200, orders: 8 },
-                    { month: 'Feb', spending: 1800, orders: 12 },
-                    { month: 'Mar', spending: 1400, orders: 10 },
-                    { month: 'Apr', spending: 2200, orders: 15 },
-                    { month: 'May', spending: 1900, orders: 13 },
-                    { month: 'Jun', spending: 2400, orders: 18 },
-                    { month: 'Jul', spending: stats.totals.monthlySpent, orders: stats.totals.orders }
-                  ]}
-                />
-              </AnimatedChart>
+              <Suspense fallback={<div className="animate-pulse bg-muted rounded-lg h-80 w-full" />}>
+                <AnimatedChart delay={0.2}>
+                  <SpendingTrendChart 
+                    data={[
+                      { month: 'Jan', spending: 1200, orders: 8 },
+                      { month: 'Feb', spending: 1800, orders: 12 },
+                      { month: 'Mar', spending: 1400, orders: 10 },
+                      { month: 'Apr', spending: 2200, orders: 15 },
+                      { month: 'May', spending: 1900, orders: 13 },
+                      { month: 'Jun', spending: 2400, orders: 18 },
+                      { month: 'Jul', spending: stats.totals.monthlySpent, orders: stats.totals.orders }
+                    ]}
+                  />
+                </AnimatedChart>
+              </Suspense>
             </ComponentErrorBoundary>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ComponentErrorBoundary name="Retailer Distribution Chart">
-                <AnimatedChart delay={0.4}>
-                  <RetailerDistributionChart 
-                    data={stats.distributions.topRetailers.map(r => ({
-                      name: r.retailer,
-                      value: r.count
-                    }))}
-                  />
-                </AnimatedChart>
+                <Suspense fallback={<div className="animate-pulse bg-muted rounded-lg h-80 w-full" />}>
+                  <AnimatedChart delay={0.4}>
+                    <RetailerDistributionChart 
+                      data={stats.distributions.topRetailers.map(r => ({
+                        name: r.retailer,
+                        value: r.count
+                      }))}
+                    />
+                  </AnimatedChart>
+                </Suspense>
               </ComponentErrorBoundary>
 
               <ComponentErrorBoundary name="Order Status Chart">
-                <AnimatedChart delay={0.6}>
-                  <OrderStatusChart 
-                    data={Object.entries(stats.distributions.status).map(([status, count]) => ({
-                      status: status.charAt(0).toUpperCase() + status.slice(1),
-                      count
-                    }))}
-                  />
-                </AnimatedChart>
+                <Suspense fallback={<div className="animate-pulse bg-muted rounded-lg h-80 w-full" />}>
+                  <AnimatedChart delay={0.6}>
+                    <OrderStatusChart 
+                      data={Object.entries(stats.distributions.status).map(([status, count]) => ({
+                        status: status.charAt(0).toUpperCase() + status.slice(1),
+                        count
+                      }))}
+                    />
+                  </AnimatedChart>
+                </Suspense>
               </ComponentErrorBoundary>
             </div>
           </div>

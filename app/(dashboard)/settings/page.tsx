@@ -2,10 +2,26 @@
 
 import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { DashboardHeader } from '@/components/dashboard/header'
-import { EmailAccountsList } from '@/components/settings/email-accounts-list'
-import { EmailForwardingGuide } from '@/components/settings/email-forwarding-guide'
 import { toast } from 'sonner'
+
+// Dynamic imports for settings components
+const EmailAccountsList = dynamic(
+  () => import('@/components/settings/email-accounts-list').then(mod => ({ default: mod.EmailAccountsList })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-48 w-full" />,
+    ssr: false
+  }
+)
+
+const EmailForwardingGuide = dynamic(
+  () => import('@/components/settings/email-forwarding-guide').then(mod => ({ default: mod.EmailForwardingGuide })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-32 w-full" />,
+    ssr: false
+  }
+)
 
 // OAuth environment configured for production
 function SettingsContent() {
@@ -46,8 +62,12 @@ function SettingsContent() {
       />
       
       <div className="mx-4 sm:mx-0 space-y-6">
-        <EmailForwardingGuide />
-        <EmailAccountsList />
+        <Suspense fallback={<div className="animate-pulse bg-muted rounded-lg h-32 w-full" />}>
+          <EmailForwardingGuide />
+        </Suspense>
+        <Suspense fallback={<div className="animate-pulse bg-muted rounded-lg h-48 w-full" />}>
+          <EmailAccountsList />
+        </Suspense>
       </div>
     </div>
   )

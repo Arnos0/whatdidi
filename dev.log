@@ -1,0 +1,88 @@
+
+> whatdidishop@0.1.0 dev:original
+> next dev
+
+✅ Correct port detected: 3002
+✅ Correct port detected: 3002
+  ▲ Next.js 14.2.25
+  - Local:        http://localhost:3002
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · scrollRestoration
+
+ ✓ Starting...
+ ✓ Ready in 2.5s
+ ✓ Compiled /middleware in 448ms (195 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 5.1s (1993 modules)
+ HEAD / 200 in 5715ms
+ ✓ Compiled in 895ms (904 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1019ms (1982 modules)
+ HEAD /dashboard 404 in 1225ms
+ ○ Compiling /sign-in/[[...sign-in]] ...
+ ✓ Compiled /sign-in/[[...sign-in]] in 1045ms (1992 modules)
+ HEAD /sign-in 200 in 1641ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 7s (3213 modules)
+ ○ Compiling /api/dashboard/stats ...
+ ✓ Compiled /api/sync-user in 2.2s (1828 modules)
+ ✓ Compiled (1831 modules)
+ GET /api/dashboard/stats 200 in 3278ms
+ POST /api/sync-user 200 in 2385ms
+ ○ Compiling /orders ...
+ ✓ Compiled /orders in 6.3s (4250 modules)
+ ○ Compiling /api/orders ...
+ ✓ Compiled /api/orders in 597ms (2295 modules)
+🔍 Orders API Debug:
+  Clerk ID: user_2zrK6l5ZjHLU5UjvTmOjXvyFNzq
+  Database User: f53e0414-1918-45f5-abee-ef7ec89aa2df (arno@wedevelop.nl)
+  Querying orders for user ID: f53e0414-1918-45f5-abee-ef7ec89aa2df
+  Found 10 orders (total: 12)
+ GET /api/orders?page=1&limit=10 200 in 1075ms
+ ○ Compiling /orders/[id] ...
+ ✓ Compiled /orders/[id] in 2.5s (4252 modules)
+ GET /orders/b012c326-9a9b-4b2e-9ec6-205cbf4e998c?_rsc=5uqkl 200 in 463ms
+ ✓ Compiled /api/orders/[id] in 468ms (2296 modules)
+🔍 Order Detail API Debug: {
+  orderId: 'b012c326-9a9b-4b2e-9ec6-205cbf4e998c',
+  timestamp: '2025-07-19T20:46:37.976Z'
+}
+✅ Order Detail API: Clerk ID found: user_2zrK6l5ZjHLU5UjvTmOjXvyFNzq
+✅ Order Detail API: Database user found: {
+  userId: 'f53e0414-1918-45f5-abee-ef7ec89aa2df',
+  email: 'arno@wedevelop.nl'
+}
+✅ Order Detail API: Order ID validation passed
+🔍 Order Detail API: Querying order with ID: b012c326-9a9b-4b2e-9ec6-205cbf4e998c for user: f53e0414-1918-45f5-abee-ef7ec89aa2df
+✅ Order Detail API: Order found: {
+  orderId: 'b012c326-9a9b-4b2e-9ec6-205cbf4e998c',
+  orderNumber: 'BOL-1234567890-LXz0mB',
+  retailer: 'Bol.com',
+  itemsCount: 3
+}
+ GET /api/orders/b012c326-9a9b-4b2e-9ec6-205cbf4e998c 200 in 1390ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 830ms (4270 modules)
+ GET /email-accounts 404 in 243ms
+ GET /icon-144x144.png 404 in 66ms
+ GET /dashboard 200 in 170ms
+ GET /icon-144x144.png 404 in 59ms
+ ○ Compiling /api/dashboard/stats ...
+ ✓ Compiled /api/sync-user in 1237ms (2299 modules)
+ ✓ Compiled (2301 modules)
+ POST /api/sync-user 200 in 1967ms
+ GET /email-accounts 404 in 210ms
+ GET /icon-144x144.png 404 in 67ms
+ GET /dashboard 200 in 141ms
+ GET /icon-144x144.png 404 in 78ms
+ GET /api/dashboard/stats 200 in 328ms
+ POST /api/sync-user 200 in 387ms
+ ○ Compiling /api/orders ...
+ ✓ Compiled /api/orders in 1066ms (2307 modules)
+🔍 Orders API Debug:
+  Clerk ID: user_2zrK6l5ZjHLU5UjvTmOjXvyFNzq
+  Database User: f53e0414-1918-45f5-abee-ef7ec89aa2df (arno@wedevelop.nl)
+  Querying orders for user ID: f53e0414-1918-45f5-abee-ef7ec89aa2df
+  Found 10 orders (total: 12)
+ GET /api/orders?page=1&limit=10 200 in 1366ms

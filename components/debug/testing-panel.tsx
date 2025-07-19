@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,14 +15,25 @@ import {
   TestTube,
   PlayCircle,
   StopCircle,
-  Settings
+  Settings,
+  BarChart3
 } from 'lucide-react'
 import { useErrorTracking } from '@/lib/utils/error-tracking'
 import { AppError, ValidationError, NetworkError, BusinessError } from '@/lib/utils/error-standardizer'
+
+// Dynamic import for Web Vitals Dashboard
+const WebVitalsDashboard = dynamic(
+  () => import('@/components/analytics/web-vitals-dashboard').then(mod => ({ default: mod.WebVitalsDashboard })),
+  { 
+    loading: () => <div className="animate-pulse bg-muted rounded-lg h-48 w-full" />,
+    ssr: false
+  }
+)
 import { toast } from 'sonner'
 
 export function TestingPanel() {
   const [isVisible, setIsVisible] = useState(false)
+  const [activeTab, setActiveTab] = useState<'errors' | 'performance'>('errors')
   const [customErrorMessage, setCustomErrorMessage] = useState('Test error message')
   const [isClient, setIsClient] = useState(false)
   const { captureError, captureComponentError, getErrorStats } = useErrorTracking()
@@ -128,7 +140,7 @@ export function TestingPanel() {
           <TestTube className="h-5 w-5" />
         </Button>
       ) : (
-        <Card className="w-80 max-h-96 overflow-y-auto p-4 bg-white border-purple-200">
+        <Card className="w-96 max-h-[500px] overflow-y-auto p-4 bg-white border-purple-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TestTube className="h-5 w-5 text-purple-600" />
@@ -143,17 +155,46 @@ export function TestingPanel() {
             </Button>
           </div>
 
-          {/* Error Stats */}
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <h4 className="text-sm font-medium mb-2">Error Stats</h4>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div>Total: <Badge variant="outline">{stats.total}</Badge></div>
-              <div>Recent: <Badge variant="outline">{stats.recent}</Badge></div>
-            </div>
+          {/* Tab Navigation */}
+          <div className="flex mb-4 border-b">
+            <button
+              className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'errors'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('errors')}
+            >
+              <Bug className="h-4 w-4 inline mr-1" />
+              Errors
+            </button>
+            <button
+              className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'performance'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('performance')}
+            >
+              <BarChart3 className="h-4 w-4 inline mr-1" />
+              Performance
+            </button>
           </div>
 
-          {/* Error Testing */}
-          <div className="space-y-3">
+          {/* Tab Content */}
+          {activeTab === 'errors' && (
+            <div>
+              {/* Error Stats */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">Error Stats</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>Total: <Badge variant="outline">{stats.total}</Badge></div>
+                  <div>Recent: <Badge variant="outline">{stats.recent}</Badge></div>
+                </div>
+              </div>
+
+              {/* Error Testing */}
+              <div className="space-y-3">
             <div>
               <h4 className="text-sm font-medium mb-2 flex items-center gap-1">
                 <Bug className="h-4 w-4" />
@@ -235,14 +276,22 @@ export function TestingPanel() {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="pt-2 border-t">
-              <Button size="sm" variant="destructive" onClick={clearAllErrors} className="w-full">
-                <StopCircle className="h-3 w-3 mr-1" />
-                Clear & Reload
-              </Button>
+                {/* Actions */}
+                <div className="pt-2 border-t">
+                  <Button size="sm" variant="destructive" onClick={clearAllErrors} className="w-full">
+                    <StopCircle className="h-3 w-3 mr-1" />
+                    Clear & Reload
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === 'performance' && (
+            <div>
+              <WebVitalsDashboard />
+            </div>
+          )}
         </Card>
       )}
     </div>

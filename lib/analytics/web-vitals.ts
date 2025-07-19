@@ -40,6 +40,11 @@ function getPerformanceRating(name: string, value: number): 'good' | 'needs-impr
  */
 async function sendToAnalytics(metric: WebVitalsData): Promise<void> {
   try {
+    // Dispatch custom event for dashboard
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('web-vitals-data', { detail: metric }))
+    }
+
     // In development, just log to console
     if (process.env.NODE_ENV === 'development') {
       console.log('📊 Web Vitals:', metric)

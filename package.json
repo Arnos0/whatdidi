@@ -6,11 +6,16 @@
     "dev": "PORT=3002 next dev",
     "dev:original": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true npm run build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "lighthouse": "lhci autorun",
+    "lighthouse:collect": "lhci collect",
+    "lighthouse:assert": "lhci assert",
+    "performance:test": "npm run build && npm run lighthouse",
     "_reminder": "✅ npm run dev now uses PORT=3002 automatically! Alternative: ./start-dev.sh"
   },
   "dependencies": {
@@ -57,6 +62,8 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@next/bundle-analyzer": "^15.4.2",
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",

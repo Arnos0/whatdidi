@@ -1,0 +1,8 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="40" fill="#4F46E5"/>
+  <g transform="translate(48, 48)">
+    <path d="M6 2L10 6L4 12L10 18L14 14L18 18L14 12Z" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="48" r="12" fill="white"/>
+    <text x="48" y="80" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">Shop</text>
+  </g>
+</svg>
