@@ -39,9 +39,10 @@ const navigation = [
 interface SidebarProps {
   collapsed?: boolean
   onToggle?: (collapsed: boolean) => void
+  onNavigate?: () => void
 }
 
-export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed = false, onToggle, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
   const [isHovered, setIsHovered] = useState(false)
@@ -127,6 +128,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
                     <TooltipTrigger asChild>
                       <Link
                         href={item.href}
+                        onClick={onNavigate}
                         className={cn(
                           'group relative flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300',
                           isActive

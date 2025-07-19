@@ -45,7 +45,7 @@ export function LayoutWrapper({ children, variant = 'horizontal' }: LayoutWrappe
           <div className="fixed inset-0 z-50 md:hidden">
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
             <div className="fixed left-0 top-0 h-full w-80 max-w-[80vw]">
-              <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
+              <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} onNavigate={() => setMobileMenuOpen(false)} />
             </div>
           </div>
         )}
