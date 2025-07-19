@@ -98,7 +98,7 @@ function OrdersContent() {
       />
       
       <PullToRefresh 
-        onRefresh={() => refetch()}
+        onRefresh={async () => { await refetch() }}
         className="mx-4 sm:mx-0"
         enabled={!isLoading}
       >
