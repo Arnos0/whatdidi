@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { motion } from "framer-motion"
+import { motion, HTMLMotionProps } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -51,14 +51,15 @@ const badgeVariants = cva(
 )
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'ref'>,
     VariantProps<typeof badgeVariants> {
   icon?: React.ReactNode
   iconPosition?: "left" | "right"
   motion?: boolean
 }
 
-function Badge({ className, variant, size, animate, icon, iconPosition = "left", motion: enableMotion = false, children, ...props }: BadgeProps) {
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant, size, animate, icon, iconPosition = "left", motion: enableMotion = false, children, ...props }, ref) => {
   const content = (
     <>
       {icon && iconPosition === "left" && (
@@ -71,28 +72,37 @@ function Badge({ className, variant, size, animate, icon, iconPosition = "left",
     </>
   )
 
-  if (enableMotion) {
+    const badgeClassName = cn(badgeVariants({ variant, size, animate }), className)
+
+    if (enableMotion) {
+      return (
+        <motion.div
+          ref={ref}
+          className={badgeClassName}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          style={props.style}
+          onClick={props.onClick}
+          onMouseEnter={props.onMouseEnter}
+          onMouseLeave={props.onMouseLeave}
+        >
+          {content}
+        </motion.div>
+      )
+    }
+
     return (
-      <motion.div
-        className={cn(badgeVariants({ variant, size, animate }), className)}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      <div
+        ref={ref}
+        className={badgeClassName}
         {...props}
       >
         {content}
-      </motion.div>
+      </div>
     )
   }
-
-  return (
-    <div
-      className={cn(badgeVariants({ variant, size, animate }), className)}
-      {...props}
-    >
-      {content}
-    </div>
-  )
-}
+)
+Badge.displayName = "Badge"
 
 export { Badge, badgeVariants }
