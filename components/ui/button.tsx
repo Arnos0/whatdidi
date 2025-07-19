@@ -144,34 +144,49 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       )
     }
     
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }), "overflow-hidden")}
-        ref={combinedRef as any}
-        onClick={handleClick}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        {...props}
-      >
-        {variant !== "link" && (
+    if (!asChild && variant !== "link") {
+      return (
+        <motion.button
+          className={cn(buttonVariants({ variant, size, className }), "overflow-hidden")}
+          ref={combinedRef as any}
+          onClick={handleClick}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          disabled={props.disabled}
+          type={props.type}
+          style={props.style}
+          onMouseEnter={props.onMouseEnter}
+          onMouseLeave={props.onMouseLeave}
+        >
           <AnimatePresence>
             {ripples.map((ripple, index) => (
               <Ripple key={index} x={ripple.x} y={ripple.y} />
             ))}
           </AnimatePresence>
-        )}
+          {buttonContent}
+          {(variant === "gradient" || variant === "gradient-success" || variant === "gradient-warning" || 
+            variant === "gradient-danger" || variant === "premium") && (
+            <motion.div
+              className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)",
+              }}
+            />
+          )}
+        </motion.button>
+      )
+    }
+    
+    return (
+      <button
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={combinedRef as any}
+        onClick={handleClick}
+        {...props}
+      >
         {buttonContent}
-        {(variant === "gradient" || variant === "gradient-success" || variant === "gradient-warning" || 
-          variant === "gradient-danger" || variant === "premium") && (
-          <motion.div
-            className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)",
-            }}
-          />
-        )}
-      </Comp>
+      </button>
     )
   }
 )

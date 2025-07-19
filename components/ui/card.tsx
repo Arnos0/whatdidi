@@ -95,14 +95,15 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, style, onClick }, ref) => (
   <motion.h3
     ref={ref}
     className={cn("font-display font-semibold text-xl leading-none tracking-tight", className)}
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.3, delay: 0.1 }}
-    {...props}
+    style={style}
+    onClick={onClick}
   >
     {children}
   </motion.h3>
@@ -112,14 +113,15 @@ CardTitle.displayName = "CardTitle"
 const CardDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, style, onClick }, ref) => (
   <motion.p
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     transition={{ duration: 0.3, delay: 0.2 }}
-    {...props}
+    style={style}
+    onClick={onClick}
   >
     {children}
   </motion.p>
@@ -150,12 +152,13 @@ CardFooter.displayName = "CardFooter"
 export const GlassCard = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, style, onClick }, ref) => (
   <Card
     ref={ref}
     variant="glass"
     className={cn("overflow-hidden", className)}
-    {...props}
+    style={style}
+    onClick={onClick}
   >
     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
     <div className="relative z-10">{children}</div>
