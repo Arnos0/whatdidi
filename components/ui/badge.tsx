@@ -59,20 +59,8 @@ export interface BadgeProps
 }
 
 function Badge({ className, variant, size, animate, icon, iconPosition = "left", motion: enableMotion = false, children, ...props }: BadgeProps) {
-  const Comp = enableMotion ? motion.div : 'div'
-  
-  const animationProps = enableMotion ? {
-    initial: { scale: 0, opacity: 0 },
-    animate: { scale: 1, opacity: 1 },
-    transition: { type: "spring", stiffness: 400, damping: 17 }
-  } : {}
-
-  return (
-    <Comp
-      className={cn(badgeVariants({ variant, size, animate }), className)}
-      {...animationProps}
-      {...props}
-    >
+  const content = (
+    <>
       {icon && iconPosition === "left" && (
         <span className="mr-1 flex items-center">{icon}</span>
       )}
@@ -80,7 +68,30 @@ function Badge({ className, variant, size, animate, icon, iconPosition = "left",
       {icon && iconPosition === "right" && (
         <span className="ml-1 flex items-center">{icon}</span>
       )}
-    </Comp>
+    </>
+  )
+
+  if (enableMotion) {
+    return (
+      <motion.div
+        className={cn(badgeVariants({ variant, size, animate }), className)}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        {...props}
+      >
+        {content}
+      </motion.div>
+    )
+  }
+
+  return (
+    <div
+      className={cn(badgeVariants({ variant, size, animate }), className)}
+      {...props}
+    >
+      {content}
+    </div>
   )
 }
 
