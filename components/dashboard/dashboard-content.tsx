@@ -98,12 +98,14 @@ export function DashboardContent() {
                 {Object.entries(stats.distributions.status).map(([status, count], index) => (
                   <motion.div 
                     key={status} 
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/10 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg hover:bg-accent/10 transition-colors"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <OrderStatusBadge status={status as any} />
+                    <div className="flex items-center">
+                      <OrderStatusBadge status={status as any} className="text-sm px-3 py-2" />
+                    </div>
                     <motion.span 
                       className="font-bold text-lg"
                       initial={{ scale: 0 }}
@@ -123,7 +125,7 @@ export function DashboardContent() {
                 {stats.distributions.topRetailers.map(({ retailer, count }, index) => (
                   <motion.div 
                     key={retailer} 
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/10 transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg hover:bg-accent/10 transition-colors"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
