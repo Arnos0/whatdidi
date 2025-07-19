@@ -1,9 +1,10 @@
 'use client'
 
 import { Component, ErrorInfo, ReactNode } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangle, RefreshCw, MessageCircle } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { errorTracker } from '@/lib/utils/error-tracking'
 
 interface Props {
   children: ReactNode
@@ -37,6 +38,20 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Track error with our error tracking system
+    const errorId = errorTracker.captureError(error, {
+      component: 'ErrorBoundary',
+      action: 'componentDidCatch',
+      additionalData: {
+        componentStack: errorInfo.componentStack,
+        errorBoundaryStack: errorInfo.errorBoundary?.toString(),
+        errorBoundaryName: errorInfo.errorBoundaryName
+      }
+    }, 'high', ['error-boundary', 'react-error'])
+
+    // Store error ID for user feedback
+    this.setState({ errorId })
+    
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo)
     
@@ -44,9 +59,6 @@ export class ErrorBoundary extends Component<Props, State> {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error Boundary caught an error:', error, errorInfo)
     }
-    
-    // In production, you might want to log to an error reporting service
-    // Example: errorReportingService.logError(error, errorInfo)
   }
 
   public componentDidUpdate(prevProps: Props) {
@@ -76,6 +88,22 @@ export class ErrorBoundary extends Component<Props, State> {
     }, 100)
   }
 
+  private sendFeedback = () => {
+    const subject = `Error Report: ${this.state.errorId}`
+    const body = `I encountered an error while using the application.
+
+Error ID: ${this.state.errorId}
+Error: ${this.state.error?.message}
+Time: ${new Date().toLocaleString()}
+URL: ${window.location.href}
+
+Additional details:
+`
+    
+    const mailtoLink = `mailto:support@whatdidishop.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    window.open(mailtoLink, '_blank')
+  }
+
   public render() {
     if (this.state.hasError) {
       // Render custom fallback UI or provided fallback
@@ -99,14 +127,29 @@ export class ErrorBoundary extends Component<Props, State> {
                 </details>
               )}
             </div>
-            <Button 
-              onClick={this.resetErrorBoundary}
-              variant="outline"
-              className="mx-auto flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Try Again
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={this.resetErrorBoundary}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </Button>
+              <Button 
+                onClick={() => this.sendFeedback()}
+                variant="ghost"
+                className="flex items-center gap-2 text-muted-foreground"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Report Issue
+              </Button>
+            </div>
+            {this.state.errorId && (
+              <p className="text-xs text-muted-foreground mt-4">
+                Error ID: {this.state.errorId}
+              </p>
+            )}
           </div>
         </Card>
       )

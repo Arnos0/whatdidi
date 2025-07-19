@@ -6,6 +6,9 @@ import { Providers } from './providers'
 import { Toaster } from 'sonner'
 import { SkipNavLinks } from '@/components/ui/skip-nav'
 import { WebVitalsReporter } from '@/components/analytics/web-vitals-reporter'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
+import { NetworkStatus } from '@/components/ui/network-status'
+import { TestingPanel } from '@/components/debug/testing-panel'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -54,10 +57,14 @@ export default function RootLayout({
           <SkipNavLinks />
           <WebVitalsReporter />
           <ThemeProvider>
-            <Providers>
-              {children}
-              <Toaster position="top-center" richColors />
-            </Providers>
+            <ErrorBoundary>
+              <Providers>
+                {children}
+                <NetworkStatus />
+                <TestingPanel />
+                <Toaster position="top-center" richColors />
+              </Providers>
+            </ErrorBoundary>
           </ThemeProvider>
         </body>
       </html>

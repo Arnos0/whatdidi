@@ -25,6 +25,7 @@ import { useOrders, useCreateOrder, useResetOrders } from '@/hooks/use-orders'
 import { CreateOrderDialog } from '@/components/orders/create-order-dialog'
 import { ManualOrderButton } from '@/components/orders/manual-order-button'
 import { PullToRefresh } from '@/components/ui/pull-to-refresh'
+import { ComponentErrorBoundary } from '@/components/ui/error-boundary'
 
 function OrdersContent() {
   const router = useRouter()
@@ -104,9 +105,11 @@ function OrdersContent() {
       >
         <div className="space-y-6">
           {/* Filters */}
-          <Card className="p-6">
-            <OrderFilters />
-          </Card>
+          <ComponentErrorBoundary name="Order Filters">
+            <Card className="p-6">
+              <OrderFilters />
+            </Card>
+          </ComponentErrorBoundary>
 
           {/* Orders List */}
           {error ? (
@@ -123,16 +126,18 @@ function OrdersContent() {
               
               {/* Pagination */}
               {data.pagination.totalPages > 1 && (
-                <Card className="p-4">
-                  <Pagination
-                    currentPage={data.pagination.page}
-                    totalPages={data.pagination.totalPages}
-                    itemsPerPage={itemsPerPage}
-                    totalItems={data.pagination.total}
-                    onPageChange={handlePageChange}
-                    onItemsPerPageChange={handleItemsPerPageChange}
-                  />
-                </Card>
+                <ComponentErrorBoundary name="Pagination">
+                  <Card className="p-4">
+                    <Pagination
+                      currentPage={data.pagination.page}
+                      totalPages={data.pagination.totalPages}
+                      itemsPerPage={itemsPerPage}
+                      totalItems={data.pagination.total}
+                      onPageChange={handlePageChange}
+                      onItemsPerPageChange={handleItemsPerPageChange}
+                    />
+                  </Card>
+                </ComponentErrorBoundary>
               )}
             </>
           ) : (

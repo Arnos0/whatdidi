@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Card } from '@/components/ui/card'
+import { FormField, FormValidationSummary } from '@/components/ui/form-error'
+import { getFieldValidationHelp, getFormLevelSuggestions, getFieldHelpText } from '@/lib/utils/form-validation-helpers'
 import { X, Plus, Upload } from 'lucide-react'
 import { CARRIERS } from '@/lib/validation/order-form'
 import { RetailerCombobox } from './retailer-combobox'
@@ -66,82 +68,111 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
     }
   }
 
+  const formErrors = Object.keys(errors).reduce((acc, key) => {
+    const error = errors[key as keyof typeof errors]
+    if (error?.message) {
+      acc[key] = error.message
+    }
+    return acc
+  }, {} as Record<string, string>)
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {Object.keys(formErrors).length > 0 && (
+        <FormValidationSummary 
+          errors={formErrors}
+          title="Please fix the following errors to continue:"
+        />
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="orderNumber">Order Number *</Label>
+        <FormField
+          label="Order Number"
+          htmlFor="orderNumber"
+          required
+          error={errors.orderNumber?.message}
+          suggestions={errors.orderNumber ? getFieldValidationHelp('orderNumber', errors.orderNumber.message).suggestions : undefined}
+          helpText={getFieldHelpText('orderNumber')}
+        >
           <Input
             id="orderNumber"
             {...register('orderNumber')}
             placeholder="e.g. 123-4567890"
-            className="mt-1"
           />
-          {errors.orderNumber && (
-            <p className="text-sm text-destructive mt-1">{errors.orderNumber.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div>
-          <Label htmlFor="retailer">Retailer *</Label>
+        <FormField
+          label="Retailer"
+          required
+          error={errors.retailer?.message}
+          suggestions={errors.retailer ? getFieldValidationHelp('retailer', errors.retailer.message).suggestions : undefined}
+          helpText={getFieldHelpText('retailer')}
+        >
           <RetailerCombobox
             retailers={retailersData?.retailers || []}
             value={watch('retailer')}
             onValueChange={(value) => setValue('retailer', value)}
-            className="mt-1"
           />
-          {errors.retailer && (
-            <p className="text-sm text-destructive mt-1">{errors.retailer.message}</p>
-          )}
-        </div>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="amount">Amount *</Label>
+        <FormField
+          label="Amount"
+          htmlFor="amount"
+          required
+          error={errors.amount?.message}
+          suggestions={errors.amount ? getFieldValidationHelp('amount', errors.amount.message).suggestions : undefined}
+          helpText={getFieldHelpText('amount')}
+        >
           <Input
             id="amount"
             type="number"
             step="0.01"
             {...register('amount', { valueAsNumber: true })}
             placeholder="0.00"
-            className="mt-1"
           />
-          {errors.amount && (
-            <p className="text-sm text-destructive mt-1">{errors.amount.message}</p>
-          )}
-        </div>
+        </FormField>
 
-        <div>
-          <Label htmlFor="orderDate">Order Date *</Label>
+        <FormField
+          label="Order Date"
+          required
+          error={errors.orderDate?.message}
+          suggestions={errors.orderDate ? getFieldValidationHelp('date', errors.orderDate.message).suggestions : undefined}
+          helpText={getFieldHelpText('orderDate')}
+        >
           <DatePicker
             value={watch('orderDate')}
             onChange={(date) => setValue('orderDate', date || new Date())}
           />
-          {errors.orderDate && (
-            <p className="text-sm text-destructive mt-1">{errors.orderDate.message}</p>
-          )}
-        </div>
+        </FormField>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="trackingNumber">Tracking Number</Label>
+        <FormField
+          label="Tracking Number"
+          htmlFor="trackingNumber"
+          error={errors.trackingNumber?.message}
+          suggestions={errors.trackingNumber ? getFieldValidationHelp('trackingNumber', errors.trackingNumber.message).suggestions : undefined}
+          helpText={getFieldHelpText('trackingNumber')}
+        >
           <Input
             id="trackingNumber"
             {...register('trackingNumber')}
             placeholder="Optional"
-            className="mt-1"
           />
-        </div>
+        </FormField>
 
-        <div>
-          <Label htmlFor="carrier">Carrier</Label>
+        <FormField
+          label="Carrier"
+          htmlFor="carrier"
+          helpText={getFieldHelpText('carrier')}
+        >
           <Select
             onValueChange={(value) => setValue('carrier', value as any)}
             defaultValue=""
           >
-            <SelectTrigger id="carrier" className="mt-1">
+            <SelectTrigger id="carrier">
               <SelectValue placeholder="Select carrier" />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +183,7 @@ export function CreateOrderForm({ onSubmit, isSubmitting }: CreateOrderFormProps
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </FormField>
       </div>
 
       <div>

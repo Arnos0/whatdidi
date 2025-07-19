@@ -21,7 +21,7 @@ import {
   OrderStatusChart,
   AnimatedChart 
 } from '@/components/charts/dashboard-charts'
-import { DashboardStatsSkeleton } from '@/components/ui/skeleton'
+import { DashboardStatsSkeleton, ChartSkeleton } from '@/components/ui/skeleton'
 
 export function DashboardContent() {
   const { data: stats, isLoading, error } = useDashboardStats()

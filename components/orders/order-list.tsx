@@ -24,6 +24,7 @@ import type { Order, OrderStatus } from '@/lib/supabase/types'
 import { Package, Truck, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react'
 import { useDeleteOrder } from '@/hooks/use-orders'
 import { OrderCardSkeleton } from '@/components/ui/skeleton'
+import { ComponentErrorBoundary } from '@/components/ui/error-boundary'
 
 interface OrderListProps {
   orders: Order[]
@@ -91,12 +92,13 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Desktop Table View */}
-      <div className="hidden md:block">
-        <Card>
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-sm text-left">
+    <ComponentErrorBoundary name="Order List">
+      <div className="space-y-4">
+        {/* Desktop Table View */}
+        <div className="hidden md:block">
+          <Card>
+            <div className="relative overflow-x-auto">
+              <table className="w-full text-sm text-left">
               <thead className="text-xs uppercase bg-muted/50">
                 <tr>
                   <th className="px-6 py-3">Order</th>
@@ -273,6 +275,7 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </ComponentErrorBoundary>
   )
 }
