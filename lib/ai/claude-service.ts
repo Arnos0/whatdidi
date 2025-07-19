@@ -196,7 +196,7 @@ ${emailText.substring(0, 3000)}`
         // If rate limited, significantly increase delay
         if (error.message?.includes('rate_limit') || error.message?.includes('40,000')) {
           rateLimitDelay = Math.min(10000, rateLimitDelay * 2)
-          console.log(`AI rate limited (token limit), increasing delay to ${rateLimitDelay}ms`)
+          // Rate limit detected, increasing delay for retry
           // Wait extra time for rate limit to reset
           await new Promise(resolve => setTimeout(resolve, 5000))
         }

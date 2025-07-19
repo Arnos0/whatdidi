@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withRateLimit } from '@/lib/middleware/rate-limit'
+import { ApiErrors, createErrorResponse } from '@/lib/utils/api-errors'
 
 // Web Vitals data schema
 const webVitalsSchema = z.object({
@@ -25,14 +26,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = webVitalsSchema.parse(body)
 
-    // Log Web Vitals data (in production, you'd want to send to a proper analytics service)
-    console.log('📊 Web Vitals Metric:', {
-      metric: validatedData.name,
-      value: validatedData.value,
-      rating: validatedData.rating,
-      url: validatedData.url,
-      timestamp: new Date(validatedData.timestamp).toISOString()
-    })
+    // Process Web Vitals data (in production, send to proper analytics service)
 
     // In a production environment, you would:
     // 1. Store in a database (PostgreSQL, InfluxDB, etc.)
@@ -50,22 +44,11 @@ export async function POST(request: NextRequest) {
       message: 'Web Vitals data received' 
     })
   } catch (error) {
-    console.error('Web Vitals API error:', error)
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid data format', 
-          details: error.errors 
-        },
-        { status: 400 }
-      )
+      return ApiErrors.badRequest('Invalid data format')
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }
 
@@ -101,10 +84,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(mockData)
   } catch (error) {
-    console.error('Failed to fetch Web Vitals data:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics data' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 500, 'Failed to fetch analytics data')
   }
 }

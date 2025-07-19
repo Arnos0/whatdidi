@@ -3,25 +3,27 @@ import { auth } from '@clerk/nextjs/server'
 import { serverUserQueries } from '@/lib/supabase/server-queries'
 import { createServerClient } from '@/lib/supabase/server-client'
 import { RETAILERS } from '@/lib/validation/order-form'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
+import { ApiErrors } from '@/lib/utils/api-errors'
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting (50 requests per minute for retailers)
+  const rateLimitResponse = await withRateLimit(request, 'api', 50)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     // Check authentication
     const { userId: clerkId } = await auth()
     if (!clerkId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return ApiErrors.notFound('User')
     }
 
     // Get unique retailers from user's orders
@@ -55,9 +57,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ retailers: allRetailers })
 
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch retailers' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }

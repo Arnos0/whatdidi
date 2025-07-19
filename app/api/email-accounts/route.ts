@@ -1,25 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { serverUserQueries, serverEmailAccountQueries } from '@/lib/supabase/server-queries'
+import { ApiErrors } from '@/lib/utils/api-errors'
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
     const { userId: clerkId } = await auth()
     if (!clerkId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return ApiErrors.notFound('User')
     }
 
     // Get email accounts for user (tokens will be encrypted)
@@ -39,9 +34,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ accounts: sanitizedAccounts })
 
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch email accounts' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }

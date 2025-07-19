@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createServerClient } from '@/lib/supabase/server-client'
+import { withRateLimit } from '@/lib/middleware/rate-limit'
+import { ApiErrors, createErrorResponse } from '@/lib/utils/api-errors'
 
 export async function GET(request: NextRequest) {
+  // Apply rate limiting (100 requests per minute for dashboard stats)
+  const rateLimitResponse = await withRateLimit(request, 'api', 100)
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     const { userId } = await auth()
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
     const supabase = createServerClient()
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest) {
       .single()
     
     if (userError || !user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return ApiErrors.notFound('User')
     }
 
     // Get current month dates
@@ -35,8 +43,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
     
     if (ordersError) {
-      console.error('Error fetching orders:', ordersError)
-      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
+      return createErrorResponse(ordersError, 500, 'Failed to fetch orders')
     }
 
     // Calculate statistics
@@ -104,7 +111,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(stats)
   } catch (error) {
-    console.error('Dashboard stats error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return ApiErrors.serverError(error)
   }
 }

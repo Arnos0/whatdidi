@@ -5,6 +5,7 @@ import { orderQuerySchema } from '@/lib/validation/orders'
 import { createOrderSchema } from '@/lib/validation/order-form'
 import { createServerClient } from '@/lib/supabase/server-client'
 import { withRateLimit } from '@/lib/middleware/rate-limit'
+import { ApiErrors, createErrorResponse } from '@/lib/utils/api-errors'
 
 export async function GET(request: NextRequest) {
   // Apply rate limiting (200 requests per minute for orders API)
@@ -17,25 +18,16 @@ export async function GET(request: NextRequest) {
     // Check authentication
     const { userId: clerkId } = await auth()
     if (!clerkId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
-    // Debug logging
-    console.log('🔍 Orders API Debug:')
-    console.log(`  Clerk ID: ${clerkId}`)
+    // Debug logging (removed sensitive data)
 
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
-    console.log(`  Database User: ${user ? `${user.id} (${user.email})` : 'NOT FOUND'}`)
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return ApiErrors.notFound('User')
     }
 
     // Parse and validate query parameters
@@ -52,10 +44,7 @@ export async function GET(request: NextRequest) {
     // Validate parameters
     const validationResult = orderQuerySchema.safeParse(queryParams)
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid query parameters', details: validationResult.error.flatten() },
-        { status: 400 }
-      )
+      return ApiErrors.badRequest('Invalid query parameters')
     }
 
     const { page, limit, search, status, dateFrom, dateTo } = validationResult.data
@@ -64,7 +53,6 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get orders with all filters applied at database level
-    console.log(`  Querying orders for user ID: ${user.id}`)
     const { orders, total } = await serverOrderQueries.getByUserIdWithFilters(user.id, {
       status,
       search,
@@ -73,8 +61,6 @@ export async function GET(request: NextRequest) {
       limit,
       offset
     })
-
-    console.log(`  Found ${orders?.length || 0} orders (total: ${total})`)
 
     return NextResponse.json({
       orders,
@@ -87,10 +73,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }
 
@@ -105,19 +88,13 @@ export async function POST(request: NextRequest) {
     // Check authentication
     const { userId: clerkId } = await auth()
     if (!clerkId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return ApiErrors.notFound('User')
     }
 
     // Parse form data (includes file)
@@ -141,10 +118,7 @@ export async function POST(request: NextRequest) {
     // Validate order data
     const validationResult = createOrderSchema.safeParse(orderData)
     if (!validationResult.success) {
-      return NextResponse.json(
-        { error: 'Invalid order data' },
-        { status: 400 }
-      )
+      return ApiErrors.badRequest('Invalid order data')
     }
 
     const validatedData = validationResult.data
@@ -159,10 +133,7 @@ export async function POST(request: NextRequest) {
       const fileExt = validatedData.receiptFile.name.split('.').pop()?.toLowerCase() || ''
       
       if (!allowedExtensions.includes(fileExt)) {
-        return NextResponse.json(
-          { error: 'Invalid file type' },
-          { status: 400 }
-        )
+        return ApiErrors.badRequest('Invalid file type. Allowed types: ' + allowedExtensions.join(', '))
       }
       
       // Sanitize filename - only use generated name, not user input
@@ -177,10 +148,7 @@ export async function POST(request: NextRequest) {
         })
 
       if (uploadError) {
-        return NextResponse.json(
-          { error: 'Failed to upload receipt' },
-          { status: 500 }
-        )
+        return createErrorResponse(uploadError, 500, 'Failed to upload receipt')
       }
 
       // Get public URL
@@ -208,10 +176,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!order) {
-      return NextResponse.json(
-        { error: 'Failed to create order' },
-        { status: 500 }
-      )
+      return createErrorResponse('Order creation failed', 500, 'Failed to create order')
     }
 
     // Create order items
@@ -229,9 +194,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ order }, { status: 201 })
 
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to create order' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }

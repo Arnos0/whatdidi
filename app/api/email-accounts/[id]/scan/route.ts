@@ -8,6 +8,7 @@ import { AIEmailClassifier } from '@/lib/email/ai-parser'
 import { aiService } from '@/lib/ai/ai-service'
 import { registerParsers } from '@/lib/email/parsers'
 import type { DateRange, ScanType } from '@/lib/types/email'
+import { ApiErrors } from '@/lib/utils/api-errors'
 
 // Initialize parsers once
 registerParsers()
@@ -25,13 +26,13 @@ export async function POST(
     // Check authentication
     const { userId: clerkId } = await auth()
     if (!clerkId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
     // Get user from database
     const user = await serverUserQueries.findByClerkId(clerkId)
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return ApiErrors.notFound('User')
     }
 
     // Parse request body
@@ -41,12 +42,12 @@ export async function POST(
     // Get email account and verify ownership
     const emailAccount = await serverEmailAccountQueries.getById(params.id, user.id)
     if (!emailAccount) {
-      return NextResponse.json({ error: 'Email account not found' }, { status: 404 })
+      return ApiErrors.notFound('Email account')
     }
 
     // Check if tokens are available
     if (!emailAccount.access_token || !emailAccount.refresh_token) {
-      return NextResponse.json({ error: 'Email account not properly connected' }, { status: 400 })
+      return ApiErrors.badRequest('Email account not properly connected')
     }
 
     // Create a new scan job
@@ -64,7 +65,7 @@ export async function POST(
       .single()
 
     if (jobError || !scanJob) {
-      return NextResponse.json({ error: 'Failed to create scan job' }, { status: 500 })
+      return ApiErrors.serverError(jobError || new Error('Failed to create scan job'))
     }
 
     // Start the scan in the background (in a real app, this would be a queue job)
@@ -91,8 +92,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('Scan initiation error:', error)
-    return NextResponse.json({ error: 'Failed to start scan' }, { status: 500 })
+    return ApiErrors.serverError(error)
   }
 }
 
@@ -122,7 +122,7 @@ export async function GET(
       .limit(1)
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to fetch scan status' }, { status: 500 })
+      return ApiErrors.serverError(error)
     }
 
     return NextResponse.json({
@@ -130,7 +130,7 @@ export async function GET(
     })
 
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch scan status' }, { status: 500 })
+    return ApiErrors.serverError(error)
   }
 }
 

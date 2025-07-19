@@ -13,14 +13,16 @@ import {
   type ManualOrderPayload,
   type EmailOrderPayload
 } from '@/lib/validators/n8n-schemas'
+import { ApiErrors, createErrorResponse } from '@/lib/utils/api-errors'
 
 /**
  * MVP Webhook endpoint for n8n integration
  * Handles both manual order entry and forwarded email processing
  */
 
-// Validate webhook token
+// Validate webhook token and signature
 const WEBHOOK_TOKEN = process.env.N8N_WEBHOOK_TOKEN
+const WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET // For HMAC signature verification
 
 // Timing-safe token comparison
 function verifyToken(providedToken: string | null, expectedToken: string): boolean {
@@ -35,6 +37,26 @@ function verifyToken(providedToken: string | null, expectedToken: string): boole
     const providedBuffer = Buffer.from(providedToken, 'utf8')
     const expectedBuffer = Buffer.from(expectedToken, 'utf8')
     return crypto.timingSafeEqual(providedBuffer, expectedBuffer)
+  } catch {
+    return false
+  }
+}
+
+// Verify HMAC signature for webhook payload
+function verifySignature(payload: string, signature: string | null, secret: string): boolean {
+  if (!signature || !secret) return false
+  
+  try {
+    const crypto = require('crypto')
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex')
+    
+    const signatureBuffer = Buffer.from(signature, 'hex')
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+    
+    return crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
   } catch {
     return false
   }
@@ -61,23 +83,28 @@ export async function POST(req: NextRequest) {
     // Security: Check content length (max 1MB)
     const contentLength = req.headers.get('content-length')
     if (contentLength && parseInt(contentLength) > 1048576) {
-      return addSecurityHeaders(NextResponse.json(
-        { error: 'Request too large' },
-        { status: 413 }
-      ))
+      return addSecurityHeaders(createErrorResponse('Request too large', 413))
     }
 
+    // Get raw body for signature verification
+    const rawBody = await req.text()
+    
     // Validate webhook token with timing-safe comparison
     const token = req.headers.get('x-webhook-token')
     if (!WEBHOOK_TOKEN || !verifyToken(token, WEBHOOK_TOKEN)) {
-      return addSecurityHeaders(NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      ))
+      return addSecurityHeaders(ApiErrors.unauthorized())
+    }
+    
+    // Verify HMAC signature if secret is configured
+    if (WEBHOOK_SECRET) {
+      const signature = req.headers.get('x-webhook-signature')
+      if (!verifySignature(rawBody, signature, WEBHOOK_SECRET)) {
+        return addSecurityHeaders(ApiErrors.unauthorized())
+      }
     }
 
     // Parse and transform payload with size protection
-    const rawPayload = await req.json()
+    const rawPayload = JSON.parse(rawBody)
     const transformedPayload = transformFormData(rawPayload)
     
     // Validate payload
@@ -93,7 +120,7 @@ export async function POST(req: NextRequest) {
     }
     
     const payload = validation.data!
-    console.log('n8n webhook received:', payload.type, 'for user:', payload.user_email.replace(/[@.]/g, '*'))
+    // Log webhook activity without exposing email
 
     // Get user from email
     const supabase = createServerClient()
@@ -108,7 +135,7 @@ export async function POST(req: NextRequest) {
       // SECURITY: Only allow test user creation in development
       if (process.env.NODE_ENV === 'development' && 
           (payload.user_email.includes('test') || payload.user_email.includes('arno'))) {
-        console.log('Creating dev test user:', payload.user_email.replace(/[@.]/g, '*'))
+        // Creating dev test user
         const { data: newUser, error: createError } = await supabase
           .from('users')
           .insert({
@@ -120,18 +147,11 @@ export async function POST(req: NextRequest) {
           .single()
 
         if (createError) {
-          console.error('Test user creation failed:', createError.code)
-          return NextResponse.json(
-            { error: 'Failed to create test user' },
-            { status: 500 }
-          )
+          return createErrorResponse(createError, 500, 'Failed to create test user')
         }
         user = newUser
       } else {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        )
+        return ApiErrors.notFound('User')
       }
     }
 
@@ -142,17 +162,10 @@ export async function POST(req: NextRequest) {
       return await handleEmailOrder(supabase, user.id, payload)
     }
 
-    return NextResponse.json(
-      { error: 'Invalid payload type' },
-      { status: 400 }
-    )
+    return ApiErrors.badRequest('Invalid payload type')
 
   } catch (error) {
-    console.error('Webhook error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }
 
@@ -186,11 +199,7 @@ async function handleManualOrder(
       .single()
 
     if (orderError) {
-      console.error('Order creation error:', orderError)
-      return NextResponse.json(
-        { error: 'Failed to create order', details: orderError.message },
-        { status: 500 }
-      )
+      return createErrorResponse(orderError, 500, 'Failed to create order')
     }
 
     // Add order items if provided
@@ -207,8 +216,7 @@ async function handleManualOrder(
         .insert(orderItems)
 
       if (itemsError) {
-        console.error('Order items error:', itemsError)
-        // Don't fail the whole request, just log it
+        // Order items error - non-critical, continuing
       }
     }
 
@@ -219,11 +227,7 @@ async function handleManualOrder(
     }))
 
   } catch (error) {
-    console.error('Manual order processing error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process manual order', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 500, 'Failed to process manual order')
   }
 }
 
@@ -245,7 +249,7 @@ async function handleEmailOrder(
       senderDomain
     )
 
-    console.log(`Processing email from ${email.from.replace(/[@.]/g, '*')} in ${detectedLanguage}`)
+    // Processing email with detected language
 
     // Build MVP prompt and analyze with Gemini
     const emailContent = {
@@ -299,11 +303,7 @@ async function handleEmailOrder(
       .single()
 
     if (orderError) {
-      console.error('Order creation error:', orderError)
-      return NextResponse.json(
-        { error: 'Failed to create order from email', details: orderError.message },
-        { status: 500 }
-      )
+      return createErrorResponse(orderError, 500, 'Failed to create order from email')
     }
 
     // Add order items if extracted
@@ -320,7 +320,7 @@ async function handleEmailOrder(
         .insert(orderItems)
 
       if (itemsError) {
-        console.error('Order items error:', itemsError)
+        // Order items error - non-critical
       }
     }
 
@@ -336,11 +336,7 @@ async function handleEmailOrder(
     }))
 
   } catch (error) {
-    console.error('Email order processing error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process email order', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return createErrorResponse(error, 500, 'Failed to process email order')
   }
 }
 

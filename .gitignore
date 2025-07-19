@@ -35,3 +35,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# admin scripts (sensitive operations)
+/scripts/admin/
+/scripts/*cleanup*.ts
+/scripts/*fix*.ts
+/scripts/*seed*.ts
+/scripts/*transfer*.ts

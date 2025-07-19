@@ -97,7 +97,7 @@ ${emailContent.body}
       
       // Debug: Log the full Gemini response for orders
       if (parsedResult.isOrder) {
-        console.log('Full Gemini response for order:', JSON.stringify(parsedResult, null, 2))
+        // Gemini response received and parsed successfully
         
         // Extra logging for tracking emails
         if (parsedResult.orderData && (parsedResult.orderData.carrier || parsedResult.orderData.tracking_number)) {
@@ -105,9 +105,8 @@ ${emailContent.body}
           console.log(`Email from: ${emailContent.from}`)
           console.log(`Subject: ${emailContent.subject}`)
           console.log(`Detected Language: ${language}`)
-          console.log(`Extracted Retailer: "${parsedResult.orderData.retailer}"`)
-          console.log(`Carrier: ${parsedResult.orderData.carrier}`)
-          console.log(`Tracking: ${parsedResult.orderData.tracking_number}`)
+          // Retailer extracted successfully
+          // Shipping details extracted
           
           // Log a snippet of the email body to see what Gemini is working with
           const bodySnippet = emailContent.body.substring(0, 500).replace(/\s+/g, ' ')
@@ -126,14 +125,14 @@ ${emailContent.body}
         // Log Coolblue responses for debugging
         if (emailContent.from.toLowerCase().includes('coolblue')) {
           console.log(`Gemini response for Coolblue email "${emailContent.subject}":`)
-          console.log(`  Raw orderData:`, JSON.stringify(parsedResult.orderData))
+          // Order data structure validated
         }
         
         if (typeof parsedResult.orderData.amount === 'string') {
           // Handle European number formats (multilingual)
-          console.log(`Converting amount from string: "${parsedResult.orderData.amount}" to number`)
+          // Converting amount to number format
           parsedResult.orderData.amount = parseEuropeanNumber(parsedResult.orderData.amount, language)
-          console.log(`Converted amount: ${parsedResult.orderData.amount}`)
+          // Amount conversion complete
         }
         
         // Also fix item prices if they're strings
@@ -158,7 +157,7 @@ ${emailContent.body}
           
           if (orderMatch) {
             parsedResult.orderData.orderNumber = orderMatch[1] || orderMatch[0];
-            console.log(`Extracted Coolblue order number from pattern: ${parsedResult.orderData.orderNumber}`);
+            // Coolblue order number pattern matched successfully
           }
         }
       }
@@ -217,7 +216,7 @@ ${emailContent.body}
 
       // Try incremental prompting for low confidence orders
       if (parsedResult.isOrder && parsedResult.orderData && parsedResult.orderData.confidence < 0.7) {
-        console.log(`Low confidence (${parsedResult.orderData.confidence}), trying incremental prompting...`)
+        // Low confidence detected, attempting incremental prompting
         
         // Identify missing or uncertain fields
         const missingFields = []
@@ -252,7 +251,7 @@ ${emailContent.body}
             if (incrementalParsed.missingFields) {
               Object.assign(parsedResult.orderData, incrementalParsed.missingFields)
               parsedResult.orderData.confidence = Math.min(1.0, parsedResult.orderData.confidence + 0.2)
-              console.log(`Incremental prompting improved confidence to ${parsedResult.orderData.confidence}`)
+              // Incremental prompting improved confidence
             }
           } catch (error) {
             console.error('Incremental prompting failed:', error)
@@ -272,9 +271,7 @@ ${emailContent.body}
       
       // Extra logging for Coolblue debugging
       if (emailContent.from.toLowerCase().includes('coolblue') && parsedResult.isOrder) {
-        console.log('Coolblue order details from Gemini:')
-        console.log(`  - orderNumber: ${parsedResult.orderData?.orderNumber} (type: ${typeof parsedResult.orderData?.orderNumber})`)
-        console.log(`  - amount: ${parsedResult.orderData?.amount} (type: ${typeof parsedResult.orderData?.amount})`)
+        // Coolblue order details validated
         console.log(`  - Body preview (first 500 chars):`, emailContent.body.substring(0, 500))
       }
       

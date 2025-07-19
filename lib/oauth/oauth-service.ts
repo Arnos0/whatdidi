@@ -248,7 +248,7 @@ export class MicrosoftOAuthProvider implements OAuthProvider {
     }
 
     const data = await response.json()
-    console.log('Microsoft user data:', data)
+    // User data retrieved successfully (details logged server-side only)
     
     // Try different fields where email might be stored
     const email = data.mail || data.userPrincipalName || data.preferredName || data.email

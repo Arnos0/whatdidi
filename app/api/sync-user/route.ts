@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { serverUserQueries } from '@/lib/supabase/server-queries'
+import { ApiErrors } from '@/lib/utils/api-errors'
 
 export async function POST() {
   try {
     const { userId } = await auth()
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return ApiErrors.unauthorized()
     }
 
     const clerkUser = await currentUser()
     if (!clerkUser) {
-      return NextResponse.json({ error: 'Clerk user not found' }, { status: 404 })
+      return ApiErrors.notFound('User')
     }
 
     const user = await serverUserQueries.syncFromClerk({
@@ -26,9 +27,6 @@ export async function POST() {
 
     return NextResponse.json({ success: true, user })
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to sync user' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError(error)
   }
 }

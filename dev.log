@@ -86,3 +86,13 @@
   Querying orders for user ID: f53e0414-1918-45f5-abee-ef7ec89aa2df
   Found 10 orders (total: 12)
  GET /api/orders?page=1&limit=10 200 in 1366ms
+ ✓ Compiled in 2.8s (4141 modules)
+ ✓ Compiled in 1084ms (1985 modules)
+ ✓ Compiled in 598ms (1985 modules)
+ ✓ Compiled in 583ms (1985 modules)
+ ✓ Compiled in 617ms (1985 modules)
+ ✓ Compiled in 614ms (1985 modules)
+ ✓ Compiled in 1262ms (1985 modules)
+ ✓ Compiled in 1034ms (1985 modules)
+ ✓ Compiled in 588ms (1985 modules)
+ ✓ Compiled in 1078ms (1985 modules)

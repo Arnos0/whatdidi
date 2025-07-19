@@ -91,12 +91,7 @@ export class AIEmailParser implements EmailParser {
         confidence: orderData.confidence
       }
       
-      console.log(`AI successfully parsed order from ${parsedOrder.retailer}:`, {
-        orderNumber: parsedOrder.order_number,
-        amount: `${parsedOrder.currency} ${parsedOrder.amount}`,
-        confidence: parsedOrder.confidence,
-        language: result.debugInfo?.language
-      })
+      // Order successfully parsed from retailer with high confidence
       
       return parsedOrder
       
