@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { EmailAccountsList } from '@/components/settings/email-accounts-list'
@@ -8,7 +8,7 @@ import { EmailForwardingGuide } from '@/components/settings/email-forwarding-gui
 import { toast } from 'sonner'
 
 // OAuth environment configured for production
-export default function SettingsPage() {
+function SettingsContent() {
   const searchParams = useSearchParams()
   
   useEffect(() => {
@@ -50,5 +50,13 @@ export default function SettingsPage() {
         <EmailAccountsList />
       </div>
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SettingsContent />
+    </Suspense>
   )
 }

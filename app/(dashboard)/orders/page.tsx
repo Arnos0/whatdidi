@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { Card } from '@/components/ui/card'
@@ -25,7 +25,7 @@ import { useOrders, useCreateOrder, useResetOrders } from '@/hooks/use-orders'
 import { CreateOrderDialog } from '@/components/orders/create-order-dialog'
 import { ManualOrderButton } from '@/components/orders/manual-order-button'
 
-export default function OrdersPage() {
+function OrdersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [itemsPerPage, setItemsPerPage] = useState(
@@ -197,5 +197,13 @@ export default function OrdersPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OrdersContent />
+    </Suspense>
   )
 }
