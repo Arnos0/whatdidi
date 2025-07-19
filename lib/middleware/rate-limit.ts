@@ -78,11 +78,12 @@ function cleanOldEntries(now: number) {
   // Only clean every 100 requests to avoid performance issues
   if (Math.random() > 0.01) return
   
-  for (const [key, value] of rateLimitStore.entries()) {
+  // Use forEach for better compatibility
+  rateLimitStore.forEach((value, key) => {
     if (value.resetTime < now) {
       rateLimitStore.delete(key)
     }
-  }
+  })
 }
 
 export function withRateLimitedHandler(
