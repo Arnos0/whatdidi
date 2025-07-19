@@ -442,6 +442,18 @@ PORT=3002 npm start
 DEBUG=* PORT=3002 npm run dev
 ```
 
+### IMPORTANT: Before Pushing to Production
+In the future, I'll make sure to:
+1. Test locally before pushing
+2. Wait for your confirmation
+3. Be more careful with production deployments
+
+**Always verify locally that:**
+- The server starts without errors
+- Pages load correctly
+- No blank screens or webpack errors
+- All API endpoints respond properly
+
 ### Troubleshooting Network Issues
 If you can't access the server at localhost:3002:
 1. Check if you're in a Docker/container environment
