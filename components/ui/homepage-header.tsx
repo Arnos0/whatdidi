@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { Button } from '@/components/ui/button'
 import { Container } from './container'
 
 export function HomepageHeader() {
@@ -23,6 +25,34 @@ export function HomepageHeader() {
             >
               Pricing
             </Link>
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                Sign in
+              </Link>
+              <Button variant="gradient" asChild>
+                <Link href="/sign-up">
+                  Get Started
+                </Link>
+              </Button>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/orders"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              >
+                Orders
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
           </nav>
           
           <div className="md:hidden flex items-center gap-4">
