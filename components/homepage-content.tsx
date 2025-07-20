@@ -3,6 +3,10 @@
 import { motion } from 'framer-motion'
 import { 
   ArrowRight, 
+  Mail, 
+  Package, 
+  TrendingUp, 
+  Shield, 
   Smartphone,
   CheckCircle,
   Sparkles
@@ -12,20 +16,43 @@ import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/ui/card'
 import { Container } from '@/components/ui/container'
 
-interface HomepageContentProps {
-  features: Array<{
-    icon: any
-    title: string
-    description: string
-    color: string
-  }>
-  retailers: Array<{
-    name: string
-    logo: string
-  }>
-}
+const features = [
+  {
+    icon: Mail,
+    title: 'Email Integration',
+    description: 'Connect your Gmail or Outlook to automatically track orders from any retailer',
+    color: 'from-blue-500 to-blue-600'
+  },
+  {
+    icon: Package,
+    title: 'Smart Tracking',
+    description: 'Real-time delivery updates and package tracking from all major carriers',
+    color: 'from-purple-500 to-purple-600'
+  },
+  {
+    icon: TrendingUp,
+    title: 'Spending Analytics',
+    description: 'Visualize your shopping patterns and spending trends with beautiful charts',
+    color: 'from-green-500 to-green-600'
+  },
+  {
+    icon: Shield,
+    title: 'Secure & Private',
+    description: 'Your data is encrypted and never shared. Complete privacy guaranteed',
+    color: 'from-orange-500 to-orange-600'
+  }
+]
 
-export function HomepageContent({ features, retailers }: HomepageContentProps) {
+const retailers = [
+  { name: 'Bol.com', logo: '🛍️' },
+  { name: 'Amazon', logo: '📦' },
+  { name: 'Coolblue', logo: '💻' },
+  { name: 'Zalando', logo: '👕' },
+  { name: 'MediaMarkt', logo: '📱' },
+  { name: 'HEMA', logo: '🏠' }
+]
+
+export function HomepageContent() {
   return (
     <>
       {/* Hero Section */}
