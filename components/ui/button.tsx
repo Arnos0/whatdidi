@@ -32,6 +32,8 @@ const buttonVariants = cva(
           "bg-gradient-danger text-white shadow-md hover:shadow-red-500/25 hover:scale-105 border border-transparent",
         premium:
           "bg-gradient-premium text-white shadow-lg hover:shadow-glow-lg hover:scale-105 border border-transparent",
+        compact:
+          "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent hover:shadow-md",
       },
       size: {
         default: "h-10 px-5 py-2",

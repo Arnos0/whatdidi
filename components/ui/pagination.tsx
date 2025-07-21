@@ -57,7 +57,7 @@ export function Pagination({
         {/* Page navigation */}
         <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="compact"
             size="icon"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
@@ -73,7 +73,7 @@ export function Pagination({
                 </span>
               ) : (
                 <Button
-                  variant={currentPage === pageNumber ? 'default' : 'outline'}
+                  variant={currentPage === pageNumber ? 'default' : 'compact'}
                   size="icon"
                   onClick={() => onPageChange(Number(pageNumber))}
                 >
@@ -84,7 +84,7 @@ export function Pagination({
           ))}
 
           <Button
-            variant="outline"
+            variant="compact"
             size="icon"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}

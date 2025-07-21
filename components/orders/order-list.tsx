@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import type { Order, OrderStatus } from '@/lib/supabase/types'
-import { Package, Truck, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react'
+import { Package, Truck, CheckCircle, XCircle, Clock, Trash2, ArrowRight } from 'lucide-react'
 import { useDeleteOrder } from '@/hooks/use-orders'
 import { OrderCardSkeleton } from '@/components/ui/skeleton'
 import { ComponentErrorBoundary } from '@/components/ui/error-boundary'
@@ -60,14 +61,9 @@ const statusConfig: Record<OrderStatus, { label: string; variant: 'default' | 's
 }
 
 export function OrderList({ orders, isLoading }: OrderListProps) {
-  const router = useRouter()
   const deleteOrder = useDeleteOrder()
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null)
-
-  const handleOrderClick = (orderId: string) => {
-    router.push(`/orders/${orderId}`)
-  }
 
   const handleDeleteClick = (e: React.MouseEvent, orderId: string) => {
     e.stopPropagation() // Prevent navigation to order detail
@@ -94,166 +90,69 @@ export function OrderList({ orders, isLoading }: OrderListProps) {
   return (
     <ComponentErrorBoundary name="Order List">
       <div className="space-y-4">
-        {/* Desktop Table View */}
-        <div className="hidden md:block">
-          <Card>
-            <div className="relative overflow-x-auto">
-              <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-muted/50">
-                <tr>
-                  <th className="px-6 py-3">Order</th>
-                  <th className="px-6 py-3">Retailer</th>
-                  <th className="px-6 py-3">Amount</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Source</th>
-                  <th className="px-6 py-3">Date</th>
-                  <th className="px-6 py-3">Tracking</th>
-                  <th className="px-6 py-3 w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => {
-                  const statusInfo = statusConfig[order.status as OrderStatus]
-                  return (
-                    <tr 
-                      key={order.id} 
-                      className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => handleOrderClick(order.id)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`View order #${order.order_number} details`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          handleOrderClick(order.id);
-                        }
-                      }}
-                    >
-                      <td className="px-6 py-4 font-medium">
-                        #{order.order_number}
-                      </td>
-                      <td className="px-6 py-4">
-                        <RetailerIcon retailer={order.retailer} showName />
-                      </td>
-                      <td className="px-6 py-4">
-                        {formatDutchCurrency(order.amount)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <OrderStatusBadge status={order.status as OrderStatus} language="en" />
-                      </td>
-                      <td className="px-6 py-4">
-                        <OrderSourceIndicator 
-                          isManual={order.is_manual || false} 
-                          needsReview={order.needs_review || false}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm">
-                          {new Date(order.order_date).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(order.order_date), { addSuffix: true })}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {order.tracking_number ? (
-                          <div className="text-sm">
-                            <div className="font-medium">{order.carrier?.toUpperCase()}</div>
-                            <div className="text-xs text-muted-foreground">{order.tracking_number}</div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDeleteClick(e, order.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          aria-label={`Delete order #${order.order_number}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
 
-      {/* Mobile Card View */}
-      <div className="md:hidden space-y-4">
-        {orders.map((order) => {
-          const statusInfo = statusConfig[order.status as OrderStatus]
-          return (
-            <Card 
-              key={order.id} 
-              className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleOrderClick(order.id)}
-              role="button"
-              tabIndex={0}
-              aria-label={`View order #${order.order_number} details`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleOrderClick(order.id);
-                }
-              }}
-            >
-              <div className="space-y-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <RetailerIcon retailer={order.retailer} size="lg" />
+      {/* Card View - Dashboard Recent Orders Style */}
+      <div className="space-y-4">
+        {orders.map((order, index) => (
+          <motion.div
+            key={order.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.1 }}
+          >
+            <Link href={`/orders/${order.id}`} className="block">
+              <Card
+                variant="interactive"
+                className="p-4 cursor-pointer group hover:border-primary/20 transition-all duration-200"
+                hover
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <motion.div 
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <RetailerIcon retailer={order.retailer} size="xl" />
+                    </motion.div>
                     <div>
-                      <div className="font-medium">#{order.order_number}</div>
+                      <div className="font-medium group-hover:text-primary transition-colors">
+                        #{order.order_number}
+                      </div>
                       <div className="text-sm text-muted-foreground">{order.retailer}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <OrderSourceIndicator 
-                      isManual={order.is_manual || false} 
-                      needsReview={order.needs_review || false}
-                      className="text-xs"
-                    />
-                    <OrderStatusBadge status={order.status as OrderStatus} language="en" />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDeleteClick(e, order.id)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      aria-label={`Delete order #${order.order_number}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="text-lg font-semibold">
-                    {formatDutchCurrency(order.amount)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(order.order_date).toLocaleDateString()}
-                  </div>
-                </div>
-
-                {order.tracking_number && (
-                  <div className="pt-2 border-t">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{order.carrier?.toUpperCase()}</span>
-                      <span className="text-muted-foreground">{order.tracking_number}</span>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <motion.div 
+                        className="font-bold text-lg"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 + 0.2, type: "spring" }}
+                      >
+                        {formatDutchCurrency(order.amount)}
+                      </motion.div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(order.order_date), { addSuffix: true })}
+                      </div>
                     </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <OrderSourceIndicator 
+                        isManual={order.is_manual || false} 
+                        needsReview={order.needs_review || false}
+                        className="text-xs"
+                      />
+                      <OrderStatusBadge status={order.status as OrderStatus} language="en" />
+                    </div>
+                    
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
-                )}
-              </div>
-            </Card>
-          )
-        })}
+                </div>
+              </Card>
+            </Link>
+          </motion.div>
+        ))}
       </div>
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

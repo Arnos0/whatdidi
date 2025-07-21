@@ -106,7 +106,7 @@ function OrdersContent() {
         <div className="space-y-6">
           {/* Filters */}
           <ComponentErrorBoundary name="Order Filters">
-            <Card className="p-6">
+            <Card className="p-6" hover={false}>
               <OrderFilters />
             </Card>
           </ComponentErrorBoundary>
@@ -122,12 +122,14 @@ function OrdersContent() {
             <OrderList orders={[]} isLoading={true} />
           ) : data && data.orders.length > 0 ? (
             <>
-              <OrderList orders={data.orders} />
+              <Card className="p-6" hover={false}>
+                <OrderList orders={data.orders} />
+              </Card>
               
               {/* Pagination */}
               {data.pagination.totalPages > 1 && (
                 <ComponentErrorBoundary name="Pagination">
-                  <Card className="p-4">
+                  <Card className="p-4" hover={false}>
                     <Pagination
                       currentPage={data.pagination.page}
                       totalPages={data.pagination.totalPages}
