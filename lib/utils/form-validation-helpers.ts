@@ -162,11 +162,19 @@ export const getFormLevelSuggestions = (errors: Record<string, string>): string[
 }
 
 export const formatFieldName = (fieldName: string): string => {
-  // Convert camelCase to Title Case
-  return fieldName
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
+  // Handle already formatted names (contains spaces)
+  if (fieldName.includes(' ')) {
+    return fieldName
+  }
+  
+  // Handle acronyms like XMLHttpRequest
+  const formatted = fieldName
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')  // XMLHttp -> XML Http
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')      // httpRequest -> http Request
+    .replace(/^./, str => str.toUpperCase())     // Capitalize first letter
     .trim()
+  
+  return formatted
 }
 
 export const getFieldHelpText = (fieldName: string): string => {

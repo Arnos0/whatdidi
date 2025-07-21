@@ -187,7 +187,7 @@ export function handleApiError(error: unknown): AppError {
 
   if (error instanceof Error) {
     // Handle fetch errors
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    if (error.name === 'TypeError' && error.message.toLowerCase().includes('fetch')) {
       return new NetworkError(error.message)
     }
 

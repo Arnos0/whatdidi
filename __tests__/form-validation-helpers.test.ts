@@ -128,8 +128,8 @@ describe('formatFieldName', () => {
   })
 
   it('should handle multiple capital letters', () => {
-    expect(formatFieldName('XMLHttpRequest')).toBe('XMLHttp Request')
-    expect(formatFieldName('URLPath')).toBe('URLPath')
+    expect(formatFieldName('XMLHttpRequest')).toBe('XML Http Request')
+    expect(formatFieldName('URLPath')).toBe('URL Path')
   })
 })
 

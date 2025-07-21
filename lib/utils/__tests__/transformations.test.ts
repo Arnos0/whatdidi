@@ -173,7 +173,7 @@ describe('Integration Tests', () => {
     `
     
     const language = detectEmailLanguage(emailText)
-    const status = detectOrderStatus(emailText, language)
+    const status = detectOrderStatus(emailText, language as 'en' | 'nl')
     const amount = parseFlexibleNumber('€1.234,56')
     
     expect(language).toBe('nl')
@@ -193,7 +193,7 @@ describe('Integration Tests', () => {
     `
     
     const language = detectEmailLanguage(emailText)
-    const status = detectOrderStatus(emailText, language)
+    const status = detectOrderStatus(emailText, language as 'en' | 'nl')
     const amount = parseFlexibleNumber('$123.45')
     
     expect(language).toBe('en')
