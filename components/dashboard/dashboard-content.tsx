@@ -258,58 +258,56 @@ export function DashboardContent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
                   >
-                    <Card
-                      variant="interactive"
-                      className="p-4 cursor-pointer group"
-                      hover
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <motion.div 
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <RetailerIcon retailer={order.retailer} size="xl" />
-                          </motion.div>
-                          <div>
-                            <div className="font-medium group-hover:text-primary transition-colors">
-                              #{order.order_number}
-                            </div>
-                            <div className="text-sm text-muted-foreground">{order.retailer}</div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
+                    <Link href={`/orders/${order.id}`} className="block">
+                      <Card
+                        variant="interactive"
+                        className="p-4 cursor-pointer group hover:border-primary/20 transition-all duration-200"
+                        hover
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
                             <motion.div 
-                              className="font-bold text-lg"
-                              initial={{ scale: 0.8 }}
-                              animate={{ scale: 1 }}
-                              transition={{ duration: 0.5, delay: index * 0.1 + 0.2, type: "spring" }}
+                              whileHover={{ scale: 1.1 }}
+                              transition={{ duration: 0.3 }}
                             >
-                              {formatDutchCurrency(Number(order.amount))}
+                              <RetailerIcon retailer={order.retailer} size="xl" />
                             </motion.div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(order.order_date), { addSuffix: true })}
+                            <div>
+                              <div className="font-medium group-hover:text-primary transition-colors">
+                                #{order.order_number}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{order.retailer}</div>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            <OrderSourceIndicator 
-                              isManual={order.is_manual || false} 
-                              className="text-xs"
-                            />
-                            <OrderStatusBadge status={order.status as any} />
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <motion.div 
+                                className="font-bold text-lg"
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.5, delay: index * 0.1 + 0.2, type: "spring" }}
+                              >
+                                {formatDutchCurrency(Number(order.amount))}
+                              </motion.div>
+                              <div className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(order.order_date), { addSuffix: true })}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <OrderSourceIndicator 
+                                isManual={order.is_manual || false} 
+                                className="text-xs"
+                              />
+                              <OrderStatusBadge status={order.status as any} />
+                            </div>
+                            
+                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                           </div>
-                          
-                          <Link href={`/orders/${order.id}`}>
-                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`View order #${order.order_number} details`}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
                         </div>
-                      </div>
-                    </Card>
+                      </Card>
+                    </Link>
                   </motion.div>
                 ))}
               </div>
